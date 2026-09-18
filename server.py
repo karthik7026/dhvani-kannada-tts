@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-Dhvani Kannada Text-to-Speech & Voice Studio Server (ಧ್ವನಿ ಕನ್ನಡ ವೆಬ್ ಸ್ಟುಡಿಯೋ)
-FastAPI Backend delivering high-fidelity Kannada neural synthesis, acoustic voice cloning, text normalization, and audio mastering.
+Dhvani Kannada Text-to-Speech & Voice Delivery Studio Server (ಧ್ವನಿ ಕನ್ನಡ ವೆಬ್ ಸ್ಟುಡಿಯೋ)
+FastAPI Backend delivering high-fidelity Kannada neural synthesis, delivery/prosody style transfer, text normalization, and audio mastering.
 """
 
 import os
 import io
 import re
+import json
 import wave
 import struct
 import math
 import time
 import asyncio
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body, Header
@@ -24,11 +25,13 @@ import httpx
 
 from kannada_normalizer import KannadaNormalizer, normalize_kannada_text
 from voice_cloner import AcousticVoiceCloner
+from delivery_profiler import DeliveryProfiler
+from prosody_mapper import KannadaProsodyMapper
 
 app = FastAPI(
     title="Dhvani Kannada TTS Studio API",
-    description="High-Fidelity Kannada Neural Text-to-Speech & Voice Cloning Web Studio",
-    version="2.0.0"
+    description="High-Fidelity Kannada Neural Text-to-Speech & Reference Delivery Style Studio",
+    version="2.1.0"
 )
 
 app.add_middleware(
@@ -99,16 +102,6 @@ VOICE_PROFILES = [
         "badge": "📖 ಕಥೆ (Stories)",
         "defaultPitch": "-1Hz",
         "defaultRate": "-6%"
-    },
-    {
-        "id": "custom-clone",
-        "name": "Custom Voice Clone",
-        "gender": "custom",
-        "category": "Cloning",
-        "description": "ನಿಮ್ಮ ಆಡಿಯೊ ಮಾದರಿಯ ಪಿಚ್ ಮತ್ತು ಟಿಂಬ್ರೆ ಆಧಾರಿತ ಕ್ಲೋನಿಂಗ್",
-        "badge": "🧬 ಕ್ಲೋನ್ (Clone)",
-        "defaultPitch": "+0Hz",
-        "defaultRate": "+0%"
     }
 ]
 
@@ -195,7 +188,7 @@ PRESETS_DATA = [
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "service": "Dhvani Kannada TTS Studio", "version": "2.0.0"}
+    return {"status": "ok", "service": "Dhvani Kannada TTS Studio", "version": "2.1.0"}
 
 @app.get("/api/voices")
 def get_voices():
@@ -211,26 +204,95 @@ def normalize_endpoint(payload: dict = Body(...)):
     normalized = KannadaNormalizer.normalize(text)
     return {"original_text": text, "normalized_text": normalized}
 
-@app.post("/api/analyze_audio")
-async def analyze_audio_endpoint(reference_audio: UploadFile = File(...)):
-    """Analyzes reference audio and returns acoustic characteristics."""
-    ref_bytes = await reference_audio.read()
-    if not ref_bytes:
-        raise HTTPException(status_code=400, detail="Empty audio file")
-    
-    profile = AcousticVoiceCloner.extract_speaker_profile(ref_bytes)
-    return {
-        "filename": reference_audio.filename,
-        "pitch_hz": round(profile["mean_pitch_hz"], 1),
-        "duration_sec": round(profile["duration_sec"], 1),
-        "gender": "male" if profile["is_male"] else "female",
-        "vocal_resonance": round(profile["formant_factor"], 2),
-        "energy_density": round(profile["dynamic_punch"], 2)
-    }
-
 @app.get("/api/history")
 def get_history():
     return {"history": SYNTHESIS_HISTORY[-20:][::-1]}
+
+# -------------------------------------------------------------
+# DELIVERY PROSODY STYLE TRANSFER ENDPOINTS
+# -------------------------------------------------------------
+
+@app.post("/api/analyze_delivery")
+async def analyze_delivery_endpoint(reference_audio: UploadFile = File(...)):
+    """
+    Extracts language-agnostic Delivery Prosody statistics from reference audio:
+    - Pitch dynamics (median, range, ending slope)
+    - Speaking rate (syl/sec, multiplier)
+    - Pause distributions (short, medium, long)
+    - Energy punch & crest factor
+    - Breath-group phrasing length
+    """
+    audio_bytes = await reference_audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty reference audio")
+    
+    # Analyze a clean representative sample (up to 60s)
+    profile = DeliveryProfiler.extract_prosody_profile(audio_bytes, max_duration_sec=60.0)
+    profile["filename"] = reference_audio.filename
+    return profile
+
+@app.post("/api/synthesize_delivery")
+async def synthesize_delivery_endpoint(
+    text: str = Form(...),
+    voice: str = Form("kn-IN-GaganNeural"),
+    profile_json: Optional[str] = Form(None),
+    reference_audio: Optional[UploadFile] = File(None)
+):
+    """
+    Synthesizes Kannada text with expressive reference delivery while
+    strictly preserving 100% of the selected speaker identity (Gagan or Sapna).
+    """
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+
+    prosody_profile = None
+    if reference_audio is not None:
+        audio_bytes = await reference_audio.read()
+        if audio_bytes:
+            prosody_profile = DeliveryProfiler.extract_prosody_profile(audio_bytes, max_duration_sec=60.0)
+    
+    if prosody_profile is None and profile_json:
+        try:
+            prosody_profile = json.loads(profile_json)
+        except Exception:
+            pass
+
+    try:
+        audio_bytes, meta = await KannadaProsodyMapper.synthesize_with_delivery_style(
+            kannada_text=text,
+            voice=voice,
+            prosody_profile=prosody_profile
+        )
+
+        SYNTHESIS_HISTORY.append({
+            "id": f"clip_{int(time.time()*1000)}",
+            "timestamp": time.strftime("%H:%M:%S"),
+            "text": text[:60] + ("..." if len(text) > 60 else ""),
+            "voice": f"{voice} [Delivery Styled]",
+            "duration": meta.get("duration_sec", 0.0)
+        })
+
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": "attachment; filename=dhvani_delivery_styled.mp3",
+                "X-Delivery-Meta": json.dumps({
+                    "voice": meta.get("voice_used"),
+                    "duration": meta.get("duration_sec"),
+                    "phrase_count": meta.get("phrase_count"),
+                    "overall_pace": meta.get("overall_pace")
+                }, ensure_ascii=True)
+            }
+        )
+
+    except Exception as e:
+        print(f"Error in synthesize_delivery: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# -------------------------------------------------------------
+# STANDARD NORMAL TTS SYNTHESIS (PRESERVED FOR COMPARISON)
+# -------------------------------------------------------------
 
 @app.post("/api/synthesize")
 async def synthesize_speech(payload: dict = Body(...)):
@@ -239,15 +301,14 @@ async def synthesize_speech(payload: dict = Body(...)):
     pitch = payload.get("pitch", "+0Hz")
     rate = payload.get("rate", "+0%")
     volume = payload.get("volume", "+0%")
-    energy_mode = payload.get("energy_mode", "standard") # "standard", "high", "ultra"
-    eq_filter = payload.get("eq_filter", "natural") # "natural", "presence", "broadcast", "warm"
+    energy_mode = payload.get("energy_mode", "standard")
+    eq_filter = payload.get("eq_filter", "natural")
 
     if not text:
         raise HTTPException(status_code=400, detail="Text cannot be empty")
 
     normalized_text = KannadaNormalizer.normalize(text)
     
-    # Map high-level voice IDs to base Neural models
     actual_voice = "kn-IN-SapnaNeural"
     if voice == "kn-IN-GaganNeural" or voice == "news-anchor" or "gagan" in voice.lower() or "male" in voice.lower():
         actual_voice = "kn-IN-GaganNeural"
@@ -284,18 +345,11 @@ async def synthesize_speech(payload: dict = Body(...)):
         audio_buffer.seek(0)
         raw_audio = audio_buffer.read()
 
-        # Dynamic Audio Mastering / Equalizer
-        if voice == "podcast-narrator" or energy_mode in ["high", "ultra"] or eq_filter in ["presence", "broadcast"]:
-            profile = {"mean_pitch_hz": 125.0, "formant_factor": 1.15, "is_male": (actual_voice == "kn-IN-GaganNeural")}
-            boost_val = 1.45 if energy_mode == "ultra" else 1.25
-            raw_audio = AcousticVoiceCloner.morph_audio_to_profile(raw_audio, profile, energy_boost=boost_val)
-
-        # Record to in-memory history
         SYNTHESIS_HISTORY.append({
             "id": f"clip_{int(time.time()*1000)}",
             "timestamp": time.strftime("%H:%M:%S"),
             "text": text[:60] + ("..." if len(text) > 60 else ""),
-            "voice": voice,
+            "voice": f"{actual_voice} [Normal Mode]",
             "duration": round(len(raw_audio) / 32000, 1)
         })
 
@@ -309,7 +363,6 @@ async def synthesize_speech(payload: dict = Body(...)):
         )
 
     except Exception as e:
-        # Fallback local tone generator
         sample_rate = 24000
         duration = max(1.0, len(normalized_text) * 0.12)
         num_samples = int(sample_rate * duration)
@@ -324,99 +377,6 @@ async def synthesize_speech(payload: dict = Body(...)):
                 wf.writeframes(struct.pack('<h', val))
         wav_io.seek(0)
         return Response(content=wav_io.read(), media_type="audio/wav")
-
-@app.post("/api/clone_voice")
-async def clone_voice_endpoint(
-    text: str = Form(...),
-    pitch: Optional[float] = Form(1.0),
-    rate: Optional[float] = Form(1.0),
-    energy_level: Optional[str] = Form("ultra"),
-    api_key: Optional[str] = Form(None),
-    reference_audio: UploadFile = File(...)
-):
-    """
-    Performs True High-Energy Voice Cloning from reference audio.
-    Analyzes acoustic properties and morphs speech into the reference speaker's vocal profile.
-    """
-    if not text.strip():
-        raise HTTPException(status_code=400, detail="Text cannot be empty")
-
-    normalized_text = KannadaNormalizer.normalize(text)
-    ref_bytes = await reference_audio.read()
-
-    # 1. Extract speaker acoustic profile
-    profile = AcousticVoiceCloner.extract_speaker_profile(ref_bytes)
-
-    # 2. Optional ElevenLabs 1:1 Instant Human Cloning if key provided
-    eleven_key = api_key or os.getenv("ELEVENLABS_API_KEY")
-    if eleven_key:
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                add_voice_url = "https://api.elevenlabs.io/v1/voices/add"
-                headers = {"xi-api-key": eleven_key}
-                files = {"files": (reference_audio.filename or "sample.mp3", ref_bytes, "audio/mpeg")}
-                data = {"name": f"Cloned_{reference_audio.filename[:15]}", "description": "Kannada cloned speaker"}
-                
-                res = await client.post(add_voice_url, headers=headers, files=files, data=data)
-                if res.status_code == 200:
-                    voice_id = res.json().get("voice_id")
-                    tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-                    payload = {
-                        "text": normalized_text,
-                        "model_id": "eleven_multilingual_v2",
-                        "voice_settings": {
-                            "stability": 0.35,
-                            "similarity_boost": 0.90,
-                            "style": 0.55,
-                            "use_speaker_boost": True
-                        }
-                    }
-                    tts_res = await client.post(tts_url, headers=headers, json=payload)
-                    if tts_res.status_code == 200:
-                        return Response(
-                            content=tts_res.content,
-                            media_type="audio/mpeg",
-                            headers={"Content-Disposition": "attachment; filename=cloned_kannada_voice.mp3"}
-                        )
-        except Exception as e:
-            print(f"ElevenLabs cloning failed: {e}. Fallback to acoustic morphing...")
-
-    # 3. Acoustic Voice Morphing matching reference speaker
-    ref_pitch_hz = profile.get("mean_pitch_hz", 125.0)
-    hz_offset = int(ref_pitch_hz - 130.0) + int((pitch - 1.0) * 30.0)
-    pitch_str = f"+{hz_offset}Hz" if hz_offset >= 0 else f"{hz_offset}Hz"
-    
-    base_rate_delta = 26 if energy_level == "ultra" else (16 if energy_level == "high" else 0)
-    rate_delta = int((rate - 1.0) * 100.0) + base_rate_delta
-    rate_str = f"+{rate_delta}%" if rate_delta >= 0 else f"{rate_delta}%"
-
-    base_voice = "kn-IN-GaganNeural" if profile["is_male"] else "kn-IN-SapnaNeural"
-
-    try:
-        import edge_tts
-        communicate = edge_tts.Communicate(
-            text=normalized_text,
-            voice=base_voice,
-            pitch=pitch_str,
-            rate=rate_str
-        )
-        audio_stream = io.BytesIO()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_stream.write(chunk["data"])
-        audio_stream.seek(0)
-        raw_mp3 = audio_stream.read()
-
-        energy_boost_val = 1.50 if energy_level == "ultra" else 1.25
-        cloned_audio = AcousticVoiceCloner.morph_audio_to_profile(raw_mp3, profile, energy_boost=energy_boost_val)
-
-        return Response(
-            content=cloned_audio,
-            media_type="audio/mpeg",
-            headers={"Content-Disposition": "attachment; filename=cloned_kannada_voice.mp3"}
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # ==========================================
 # STATIC FILES & WEB STUDIO MOUNT

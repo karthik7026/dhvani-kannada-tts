@@ -1,29 +1,37 @@
 /**
- * Dhvani Kannada Text-to-Speech Studio - Frontend Engine v2.0
+ * Dhvani Kannada Text-to-Speech & Delivery Style Studio - Frontend Engine v2.1
  */
 
 document.addEventListener("DOMContentLoaded", () => {
     // Studio State
     const state = {
-        gender: "female",
-        voice: "kn-IN-SapnaNeural",
+        mode: "standard",   // "standard" or "delivery"
+        gender: "male",
+        voice: "kn-IN-GaganNeural",
         pitch: 0,           // in Hz (-30 to +30)
         rate: 1.0,          // 0.5x to 2.0x
         volume: 100,        // 0 to 100%
         preset: "natural",
-        energyMode: "ultra",// "ultra", "high", "standard"
-        eqFilter: "natural",// "natural", "presence", "broadcast", "warm"
         playbackSpeed: 1.0,
         isTranslitOn: false,
         uploadedAudioFile: null,
+        deliveryProfile: null,
         isPlaying: false,
         isLoading: false,
         currentAudioUrl: null,
+        normalAudioUrl: null,
+        styledAudioUrl: null,
         theme: "dark",
         history: []
     };
 
-    // DOM Elements
+    // DOM Elements - Navigation & Modes
+    const tabNormalTTS = document.getElementById("tabNormalTTS");
+    const tabDeliveryTransfer = document.getElementById("tabDeliveryTransfer");
+    const standardTTSPanel = document.getElementById("standardTTSPanel");
+    const deliveryTransferPanel = document.getElementById("deliveryTransferPanel");
+
+    // Text Input & Normalizer
     const kannadaInput = document.getElementById("kannadaInput");
     const charCount = document.getElementById("charCount");
     const wordCount = document.getElementById("wordCount");
@@ -34,25 +42,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const copyTextBtn = document.getElementById("copyTextBtn");
     const normalizedPreview = document.getElementById("normalizedPreview");
 
+    // Standard Mode Elements
     const voiceCards = document.querySelectorAll(".voice-card");
-    const voiceCloneUploader = document.getElementById("voiceCloneUploader");
-    const audioFileInput = document.getElementById("audioFileInput");
-    const uploadFileName = document.getElementById("uploadFileName");
-    const refAudioPreviewCard = document.getElementById("refAudioPreviewCard");
-    const refAudioPlayer = document.getElementById("refAudioPlayer");
-    const refAudioMeta = document.getElementById("refAudioMeta");
-    const analysisDetails = document.getElementById("analysisDetails");
-    const directCloneBtn = document.getElementById("directCloneBtn");
-
-    const eqChips = document.querySelectorAll(".eq-chip");
-    const energyChips = document.querySelectorAll(".energy-chip");
     const pitchSlider = document.getElementById("pitchSlider");
     const pitchValue = document.getElementById("pitchValue");
     const rateSlider = document.getElementById("rateSlider");
     const rateValue = document.getElementById("rateValue");
-    const volumeSlider = document.getElementById("volumeSlider");
-    const volumeValue = document.getElementById("volumeValue");
 
+    // Delivery Transfer Mode Elements
+    const pickGaganBtn = document.getElementById("pickGaganBtn");
+    const pickSapnaBtn = document.getElementById("pickSapnaBtn");
+    const deliveryAudioInput = document.getElementById("deliveryAudioInput");
+    const deliveryFileName = document.getElementById("deliveryFileName");
+    const analyzeDeliveryBtn = document.getElementById("analyzeDeliveryBtn");
+    const deliveryStatsCard = document.getElementById("deliveryStatsCard");
+    const statsFilename = document.getElementById("statsFilename");
+    const statPace = document.getElementById("statPace");
+    const statPitch = document.getElementById("statPitch");
+    const statPause = document.getElementById("statPause");
+    const statPunch = document.getElementById("statPunch");
+    const generateStyledBtn = document.getElementById("generateStyledBtn");
+    const abComparisonBox = document.getElementById("abComparisonBox");
+    const playNormalABBtn = document.getElementById("playNormalABBtn");
+    const playStyledABBtn = document.getElementById("playStyledABBtn");
+
+    // Audio Player Bar
     const audioPlayer = document.getElementById("audioPlayer");
     const playBtn = document.getElementById("playBtn");
     const playIcon = document.getElementById("playIcon");
@@ -70,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const waveformCanvas = document.getElementById("waveformCanvas");
     const canvasCtx = waveformCanvas.getContext("2d");
 
+    // Modals & Drawers
     const presetsModal = document.getElementById("presetsModal");
     const openPresetsBtn = document.getElementById("openPresetsBtn");
     const closePresetsBtn = document.getElementById("closePresetsBtn");
@@ -85,7 +100,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const toast = document.getElementById("toast");
 
     // ==========================================
-    // 1. TEXT METRICS & NORMALIZATION PREVIEW
+    // 1. MODE SWITCHER TABS
+    // ==========================================
+    tabNormalTTS.addEventListener("click", () => {
+        state.mode = "standard";
+        tabNormalTTS.classList.add("active");
+        tabDeliveryTransfer.classList.remove("active");
+        standardTTSPanel.classList.remove("hidden");
+        deliveryTransferPanel.classList.add("hidden");
+        updateStatusMeta();
+    });
+
+    tabDeliveryTransfer.addEventListener("click", () => {
+        state.mode = "delivery";
+        tabDeliveryTransfer.classList.add("active");
+        tabNormalTTS.classList.remove("active");
+        deliveryTransferPanel.classList.remove("hidden");
+        standardTTSPanel.classList.add("hidden");
+        updateStatusMeta("Delivery Transfer", "ರೆಫರೆನ್ಸ್ ಶೈಲಿ");
+    });
+
+    // ==========================================
+    // 2. TEXT METRICS & NORMALIZATION PREVIEW
     // ==========================================
     function updateTextMetrics() {
         const text = kannadaInput.value;
@@ -93,7 +129,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const words = text.trim() ? text.trim().split(/\s+/).length : 0;
         wordCount.textContent = `${words} ಶಬ್ದಗಳು`;
         
-        // Approx duration calculation: ~3.5 aksharas per sec / 1.0x rate
         const estSec = (text.length * 0.08 / Math.max(0.5, state.rate)).toFixed(1);
         estimatedDuration.textContent = `~${estSec} ಸೆಕೆಂಡುಗಳು`;
 
@@ -137,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ==========================================
-    // 2. KANNADA PHONETIC TRANSLITERATION ENGINE
+    // 3. KANNADA PHONETIC TRANSLITERATION ENGINE
     // ==========================================
     translitToggleBtn.addEventListener("click", () => {
         state.isTranslitOn = !state.isTranslitOn;
@@ -146,7 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast(state.isTranslitOn ? "ಕನ್ನಡ ಲಿಪ್ಯಂತರಣ ಸಕ್ರಿಯವಾಗಿದೆ (Transliteration ON)" : "ಲಿಪ್ಯಂತರಣ ನಿಷ್ಕ್ರಿಯವಾಗಿದೆ (OFF)");
     });
 
-    // Comprehensive Phonetic Transliteration Rules
     const PHONETIC_DICT = {
         'namaskara': 'ನಮಸ್ಕಾರ', 'namaste': 'ನಮಸ್ತೆ', 'kannada': 'ಕನ್ನಡ', 'karnataka': 'ಕರ್ನಾಟಕ',
         'bengaluru': 'ಬೆಂಗಳೂರು', 'mysuru': 'ಮೈಸೂರು', 'shubhodaya': 'ಶುಭೋದಯ', 'shubhadina': 'ಶುಭದಿನ',
@@ -160,30 +194,6 @@ document.addEventListener("DOMContentLoaded", () => {
         'hege': 'ಹೇಗೆ', 'yaake': 'ಯಾಕೆ', 'houdu': 'ಹೌದು', 'illa': 'ಇಲ್ಲ', 'beeku': 'ಬೇಕು', 'beda': 'ಬೇಡ'
     };
 
-    function transliteratePhonetic(input) {
-        const lower = input.toLowerCase();
-        if (PHONETIC_DICT[lower]) return PHONETIC_DICT[lower];
-
-        // Rule-based fallback converter
-        const vowels = {
-            'aa': 'ಾ', 'a': '', 'ee': 'ೀ', 'ii': 'ೀ', 'i': 'ಿ', 'oo': 'ೂ', 'uu': 'ೂ', 'u': 'ು',
-            'ai': 'ೈ', 'au': 'ೌ', 'e': 'ೆ', 'o': 'ೊ'
-        };
-        const initialVowels = {
-            'aa': 'ಆ', 'a': 'ಅ', 'ee': 'ಈ', 'ii': 'ಈ', 'i': 'ಇ', 'oo': 'ಊ', 'uu': 'ಊ', 'u': 'ಉ',
-            'ai': 'ಐ', 'au': 'ಔ', 'e': 'ಎ', 'o': 'ಒ', 'ru': 'ಋ'
-        };
-        const consonants = {
-            'kh': 'ಖ', 'k': 'ಕ', 'gh': 'ಘ', 'g': 'ಗ', 'ch': 'ಚ', 'chh': 'ಛ', 'j': 'ಜ', 'jh': 'ಝ',
-            'th': 'ಥ', 't': 'ತ', 'dh': 'ಧ', 'd': 'ದ', 'ph': 'ಫ', 'p': 'ಪ', 'bh': 'ಭ', 'b': 'ಬ',
-            'm': 'ಮ', 'y': 'ಯ', 'r': 'ರ', 'l': 'ಲ', 'v': 'ವ', 'w': 'ವ', 'sh': 'ಶ', 's': 'ಸ', 'h': 'ಹ',
-            'n': 'ನ', 'ng': 'ಂ', 'ny': 'ಞ'
-        };
-
-        // If direct match not in dict, return input for now
-        return input;
-    }
-
     kannadaInput.addEventListener("keydown", (e) => {
         if (!state.isTranslitOn) return;
         if (e.key === " " || e.key === "Enter") {
@@ -194,8 +204,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const match = before.match(/([a-zA-Z]+)$/);
             if (match) {
-                const word = match[1];
-                const converted = transliteratePhonetic(word);
+                const word = match[1].toLowerCase();
+                const converted = PHONETIC_DICT[word] || word;
                 if (converted !== word) {
                     e.preventDefault();
                     const newBefore = before.slice(0, before.length - word.length) + converted + (e.key === "Enter" ? "\n" : " ");
@@ -208,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ==========================================
-    // 3. VOICE SELECTION & PRESETS
+    // 4. STANDARD TTS VOICE & SLIDER CONTROLS
     // ==========================================
     voiceCards.forEach(card => {
         card.addEventListener("click", () => {
@@ -220,25 +230,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const preset = card.dataset.preset;
 
             state.gender = gender;
-            state.voice = voice || "kn-IN-SapnaNeural";
+            state.voice = voice || "kn-IN-GaganNeural";
 
-            if (gender === "custom") {
-                voiceCloneUploader.classList.remove("hidden");
-                state.preset = "custom";
-                updateStatusMeta("Voice Clone", "ಕಸ್ಟಮ್ ಆಡಿಯೊ");
-            } else {
-                voiceCloneUploader.classList.add("hidden");
-                if (preset === "podcast") {
-                    applyPreset("podcast", -4, 1.26);
-                } else if (preset === "news") {
-                    applyPreset("news", 2, 1.18);
-                } else if (preset === "storyteller") {
-                    applyPreset("storyteller", -1, 0.94);
-                } else if (gender === "female") {
-                    applyPreset("natural", 0, 1.0);
-                } else if (gender === "male") {
-                    applyPreset("natural", -2, 1.0);
-                }
+            if (preset === "podcast") {
+                applyPreset("podcast", -4, 1.26);
+            } else if (preset === "news") {
+                applyPreset("news", 2, 1.18);
+            } else if (gender === "female") {
+                applyPreset("natural", 0, 1.0);
+            } else if (gender === "male") {
+                applyPreset("natural", -2, 1.0);
             }
         });
     });
@@ -258,28 +259,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateTextMetrics();
     }
 
-    // Mastering & EQ Chips
-    eqChips.forEach(chip => {
-        chip.addEventListener("click", () => {
-            eqChips.forEach(c => c.classList.remove("active"));
-            chip.classList.add("active");
-            state.eqFilter = chip.dataset.eq;
-            showToast(`ಆಡಿಯೊ ಇಕ್ವಲೈಜರ್: ${chip.textContent.trim()}`);
-        });
-    });
-
-    // Vocal Energy Chips
-    energyChips.forEach(chip => {
-        chip.addEventListener("click", () => {
-            energyChips.forEach(c => c.classList.remove("active"));
-            chip.classList.add("active");
-            state.energyMode = chip.dataset.energy;
-            showToast(`ಎನರ್ಜಿ ಮೋಡ್: ${chip.textContent.trim()}`);
-            updateStatusMeta();
-        });
-    });
-
-    // Sliders
     pitchSlider.addEventListener("input", () => {
         state.pitch = parseInt(pitchSlider.value);
         pitchValue.textContent = `${state.pitch > 0 ? '+' : ''}${state.pitch} Hz`;
@@ -293,93 +272,99 @@ document.addEventListener("DOMContentLoaded", () => {
         updateTextMetrics();
     });
 
-    volumeSlider.addEventListener("input", () => {
-        state.volume = parseInt(volumeSlider.value);
-        volumeValue.textContent = `${state.volume}%`;
-        audioPlayer.volume = state.volume / 100;
-    });
-
     function updateStatusMeta(customName, customPreset) {
-        const activeCard = document.querySelector(".voice-card.active");
-        const voiceName = customName || (activeCard ? activeCard.querySelector(".voice-name").textContent : "Sapna");
-        activeVoiceInfo.textContent = `${voiceName} • ${state.pitch}Hz • ${state.rate.toFixed(2)}x`;
+        if (state.mode === "delivery") {
+            const vName = state.voice.includes("Sapna") ? "Sapna" : "Gagan";
+            activeVoiceInfo.textContent = `${vName} • ⚡ ಶೈಲಿ ವರ್ಗಾವಣೆ (Delivery Transfer)`;
+        } else {
+            const activeCard = document.querySelector(".voice-card.active");
+            const voiceName = customName || (activeCard ? activeCard.querySelector(".voice-name").textContent : "Gagan");
+            activeVoiceInfo.textContent = `${voiceName} • ${state.pitch}Hz • ${state.rate.toFixed(2)}x`;
+        }
     }
 
     // ==========================================
-    // 4. AUDIO FILE UPLOAD & CLONING
+    // 5. DELIVERY PROSODY STYLE TRANSFER ACTIONS
     // ==========================================
-    audioFileInput.addEventListener("change", async (e) => {
+    pickGaganBtn.addEventListener("click", () => {
+        pickGaganBtn.classList.add("active");
+        pickSapnaBtn.classList.remove("active");
+        state.voice = "kn-IN-GaganNeural";
+        updateStatusMeta();
+        showToast("ಧ್ವನಿ: Gagan (ಗಗನ್) ಆಯ್ಕೆಯಾಗಿದೆ");
+    });
+
+    pickSapnaBtn.addEventListener("click", () => {
+        pickSapnaBtn.classList.add("active");
+        pickGaganBtn.classList.remove("active");
+        state.voice = "kn-IN-SapnaNeural";
+        updateStatusMeta();
+        showToast("ಧ್ವನಿ: Sapna (ಸ್ಪಪ್ನಾ) ಆಯ್ಕೆಯಾಗಿದೆ");
+    });
+
+    deliveryAudioInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (file) {
             state.uploadedAudioFile = file;
-            uploadFileName.textContent = `✓ ${file.name}`;
-            
-            const fileUrl = URL.createObjectURL(file);
-            refAudioPlayer.src = fileUrl;
-            refAudioPreviewCard.classList.remove("hidden");
-            directCloneBtn.disabled = false;
-            
-            analysisDetails.textContent = "ಧ್ವನಿ ಮಾದರಿಯನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...";
-            try {
-                const formData = new FormData();
-                formData.append("reference_audio", file);
-                const res = await fetch("/api/analyze_audio", {
-                    method: "POST",
-                    body: formData
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    refAudioMeta.textContent = `${data.duration_sec}s • ${data.pitch_hz} Hz`;
-                    analysisDetails.textContent = `ವಿಶ್ಲೇಷಣೆ: ${data.gender === 'male' ? 'ಪುರುಷ' : 'ಮಹಿಳಾ'} ಧ್ವನಿ • ಪಿಚ್: ${data.pitch_hz} Hz • ರೆಸೋನೆನ್ಸ್: ${data.vocal_resonance}x`;
-                    showToast(`"${file.name}" ವಿಶ್ಲೇಷಣೆ ಯಶಸ್ವಿಯಾಗಿದೆ!`);
-                }
-            } catch (err) {
-                refAudioMeta.textContent = `${file.name}`;
-                analysisDetails.textContent = "ಆಡಿಯೊ ಮಾದರಿ ಸಿದ್ಧವಾಗಿದೆ.";
-            }
+            deliveryFileName.textContent = `✓ ${file.name}`;
+            analyzeDeliveryBtn.disabled = false;
+            showToast(`ಆಡಿಯೊ ಫೈಲ್ ಲೋಡ್ ಆಗಿದೆ: ${file.name}`);
         }
     });
 
-    directCloneBtn.addEventListener("click", () => {
+    // 5a. Analyze Delivery Prosody Profile
+    analyzeDeliveryBtn.addEventListener("click", async () => {
         if (!state.uploadedAudioFile) {
-            showToast("ದಯವಿಟ್ಟು ಮೊದಲು ಆಡಿಯೊ ಫೈಲ್ ಆಯ್ಕೆ ಮಾಡಿ");
+            showToast("ದಯವಿಟ್ಟು ಆಡಿಯೊ ಫೈಲ್ ಆಯ್ಕೆ ಮಾಡಿ");
             return;
         }
-        synthesizeAndPlay();
-    });
 
-    // ==========================================
-    // 5. SYNTHESIS & PLAYBACK
-    // ==========================================
-    playBtn.addEventListener("click", () => {
-        if (state.isPlaying) {
-            audioPlayer.pause();
-            setPlaybackState("paused");
-        } else if (audioPlayer.src && audioPlayer.currentTime > 0 && !audioPlayer.ended && audioPlayer.paused) {
-            audioPlayer.play();
-            setPlaybackState("playing");
-        } else {
-            synthesizeAndPlay();
+        analyzeDeliveryBtn.disabled = true;
+        analyzeDeliveryBtn.innerHTML = `<span>ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...</span>`;
+
+        try {
+            const formData = new FormData();
+            formData.append("reference_audio", state.uploadedAudioFile);
+
+            const res = await fetch("/api/analyze_delivery", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Delivery analysis failed");
+
+            const profile = await res.json();
+            state.deliveryProfile = profile;
+
+            // Render stats card
+            statsFilename.textContent = fileBasename(state.uploadedAudioFile.name);
+            statPace.textContent = `${profile.speaking_rate.pace_syl_sec} syl/s (${profile.speaking_rate.tempo_category})`;
+            statPitch.textContent = `${profile.pitch_dynamics.median_hz} Hz (${profile.pitch_dynamics.span_semitones} st, ${profile.pitch_dynamics.ending_slope})`;
+            statPause.textContent = `${profile.pauses.median_ms} ms (Short: ${profile.pauses.distribution.short_pct}%)`;
+            statPunch.textContent = `${profile.energy_and_punch.transition_contrast} (${profile.energy_and_punch.crest_factor_db} dB)`;
+
+            deliveryStatsCard.classList.remove("hidden");
+            analyzeDeliveryBtn.innerHTML = `<span>✓ ಶೈಲಿ ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ (Analyzed)</span>`;
+            showToast("ರೆಫರೆನ್ಸ್ ಶೈಲಿ ವಿಶ್ಲೇಷಣೆ ಯಶಸ್ವಿಯಾಗಿದೆ!");
+
+        } catch (err) {
+            console.error(err);
+            analyzeDeliveryBtn.disabled = false;
+            analyzeDeliveryBtn.innerHTML = `<span>🔍 ಶೈಲಿ ವಿಶ್ಲೇಷಿಸಿ (Analyze Delivery)</span>`;
+            showToast(`ದೋಷ: ${err.message}`);
         }
     });
 
-    stopBtn.addEventListener("click", () => {
-        audioPlayer.pause();
-        audioPlayer.currentTime = 0;
-        setPlaybackState("stopped");
+    function fileBasename(name) {
+        return name.length > 25 ? name.substring(0, 22) + "..." : name;
+    }
+
+    // 5b. Synthesize with Delivery Prosody
+    generateStyledBtn.addEventListener("click", () => {
+        synthesizeDeliveryStyled();
     });
 
-    // Playback Speed Switcher
-    playbackSpeedBtn.addEventListener("click", () => {
-        const speeds = [1.0, 1.25, 1.5, 2.0];
-        const nextIdx = (speeds.indexOf(state.playbackSpeed) + 1) % speeds.length;
-        state.playbackSpeed = speeds[nextIdx];
-        audioPlayer.playbackRate = state.playbackSpeed;
-        playbackSpeedBtn.textContent = `${state.playbackSpeed.toFixed(1)}x`;
-        showToast(`ಪ್ಲೇಬ್ಯಾಕ್ ವೇಗ: ${state.playbackSpeed}x`);
-    });
-
-    async function synthesizeAndPlay() {
+    async function synthesizeDeliveryStyled() {
         const text = kannadaInput.value.trim();
         if (!text) {
             showToast("ದಯವಿಟ್ಟು ಪಠ್ಯವನ್ನು ನಮೂದಿಸಿ");
@@ -389,63 +374,153 @@ document.addEventListener("DOMContentLoaded", () => {
         setPlaybackState("loading");
 
         try {
-            let res;
-            if (state.gender === "custom" && state.uploadedAudioFile) {
-                const formData = new FormData();
-                formData.append("text", text);
-                formData.append("pitch", (1.0 + state.pitch / 50).toString());
-                formData.append("rate", state.rate.toString());
-                formData.append("energy_level", state.energyMode);
+            const formData = new FormData();
+            formData.append("text", text);
+            formData.append("voice", state.voice);
+
+            if (state.deliveryProfile) {
+                formData.append("profile_json", JSON.stringify(state.deliveryProfile));
+            } else if (state.uploadedAudioFile) {
                 formData.append("reference_audio", state.uploadedAudioFile);
-
-                res = await fetch("/api/clone_voice", {
-                    method: "POST",
-                    body: formData
-                });
-            } else {
-                const pitchStr = `${state.pitch >= 0 ? '+' : ''}${state.pitch}Hz`;
-                const rateDelta = Math.round((state.rate - 1.0) * 100);
-                const rateStr = `${rateDelta >= 0 ? '+' : ''}${rateDelta}%`;
-
-                res = await fetch("/api/synthesize", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        text,
-                        voice: state.voice,
-                        pitch: pitchStr,
-                        rate: rateStr,
-                        energy_mode: state.energyMode,
-                        eq_filter: state.eqFilter,
-                        volume: "+0%"
-                    })
-                });
             }
 
-            if (!res.ok) {
-                throw new Error("ಸಂಶ್ಲೇಷಣೆ ವಿಫಲವಾಗಿದೆ (Synthesis failed)");
-            }
+            const res = await fetch("/api/synthesize_delivery", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Delivery synthesis failed");
 
             const blob = await res.blob();
-            if (state.currentAudioUrl) {
-                URL.revokeObjectURL(state.currentAudioUrl);
-            }
-            state.currentAudioUrl = URL.createObjectURL(blob);
+            if (state.styledAudioUrl) URL.revokeObjectURL(state.styledAudioUrl);
+            state.styledAudioUrl = URL.createObjectURL(blob);
+            state.currentAudioUrl = state.styledAudioUrl;
+
             audioPlayer.src = state.currentAudioUrl;
-            audioPlayer.volume = state.volume / 100;
+            audioPlayer.playbackRate = state.playbackSpeed;
+            audioPlayer.play();
+
+            setPlaybackState("playing");
+            abComparisonBox.classList.remove("hidden");
+            playStyledABBtn.classList.add("active");
+            playNormalABBtn.classList.remove("active");
+
+            showToast("ಶೈಲಿ ವರ್ಗಾವಣೆಯೊಂದಿಗೆ ನುಡಿಸಲಾಗುತ್ತಿದೆ (Delivery Styled Playing)!");
+
+        } catch (err) {
+            console.error(err);
+            setPlaybackState("stopped");
+            showToast(`ದೋಷ: ${err.message}`);
+        }
+    }
+
+    // 5c. A/B Comparison Switcher
+    playNormalABBtn.addEventListener("click", async () => {
+        playNormalABBtn.classList.add("active");
+        playStyledABBtn.classList.remove("active");
+
+        // Synthesize normal if not cached
+        if (!state.normalAudioUrl) {
+            setPlaybackState("loading");
+            const res = await fetch("/api/synthesize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: kannadaInput.value.trim(),
+                    voice: state.voice,
+                    pitch: "+0Hz",
+                    rate: "+0%"
+                })
+            });
+            const blob = await res.blob();
+            state.normalAudioUrl = URL.createObjectURL(blob);
+        }
+
+        state.currentAudioUrl = state.normalAudioUrl;
+        audioPlayer.src = state.currentAudioUrl;
+        audioPlayer.play();
+        setPlaybackState("playing");
+        showToast("🔊 Normal Voice ನುಡಿಸಲಾಗುತ್ತಿದೆ");
+    });
+
+    playStyledABBtn.addEventListener("click", () => {
+        if (!state.styledAudioUrl) {
+            synthesizeDeliveryStyled();
+            return;
+        }
+        playStyledABBtn.classList.add("active");
+        playNormalABBtn.classList.remove("active");
+
+        state.currentAudioUrl = state.styledAudioUrl;
+        audioPlayer.src = state.currentAudioUrl;
+        audioPlayer.play();
+        setPlaybackState("playing");
+        showToast("⚡ Delivery Styled ನುಡಿಸಲಾಗುತ್ತಿದೆ");
+    });
+
+    // ==========================================
+    // 6. SYNTHESIS & PLAYBACK DISPATCHER
+    // ==========================================
+    playBtn.addEventListener("click", () => {
+        if (state.isPlaying) {
+            audioPlayer.pause();
+            setPlaybackState("paused");
+        } else if (audioPlayer.src && audioPlayer.currentTime > 0 && !audioPlayer.ended && audioPlayer.paused) {
+            audioPlayer.play();
+            setPlaybackState("playing");
+        } else {
+            if (state.mode === "delivery") {
+                synthesizeDeliveryStyled();
+            } else {
+                synthesizeStandardTTS();
+            }
+        }
+    });
+
+    stopBtn.addEventListener("click", () => {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        setPlaybackState("stopped");
+    });
+
+    async function synthesizeStandardTTS() {
+        const text = kannadaInput.value.trim();
+        if (!text) {
+            showToast("ದಯವಿಟ್ಟು ಪಠ್ಯವನ್ನು ನಮೂದಿಸಿ");
+            return;
+        }
+
+        setPlaybackState("loading");
+
+        try {
+            const pitchStr = `${state.pitch >= 0 ? '+' : ''}${state.pitch}Hz`;
+            const rateDelta = Math.round((state.rate - 1.0) * 100);
+            const rateStr = `${rateDelta >= 0 ? '+' : ''}${rateDelta}%`;
+
+            const res = await fetch("/api/synthesize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text,
+                    voice: state.voice,
+                    pitch: pitchStr,
+                    rate: rateStr
+                })
+            });
+
+            if (!res.ok) throw new Error("Synthesis failed");
+
+            const blob = await res.blob();
+            if (state.currentAudioUrl) URL.revokeObjectURL(state.currentAudioUrl);
+            state.currentAudioUrl = URL.createObjectURL(blob);
+            state.normalAudioUrl = state.currentAudioUrl;
+
+            audioPlayer.src = state.currentAudioUrl;
             audioPlayer.playbackRate = state.playbackSpeed;
             audioPlayer.play();
 
             setPlaybackState("playing");
             showToast("ಧ್ವನಿ ಸಿದ್ಧವಾಗಿದೆ! ನುಡಿಸಲಾಗುತ್ತಿದೆ...");
-
-            // Add to session history
-            state.history.unshift({
-                time: new Date().toLocaleTimeString(),
-                text: text,
-                voice: state.voice,
-                url: state.currentAudioUrl
-            });
 
         } catch (err) {
             console.error(err);
@@ -468,7 +543,6 @@ document.addEventListener("DOMContentLoaded", () => {
         else statusText.textContent = "ಸಿದ್ಧವಾಗಿದೆ (Ready)";
     }
 
-    // Audio Progress & Scrubber
     audioPlayer.addEventListener("timeupdate", () => {
         if (!audioPlayer.duration) return;
         const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
@@ -496,7 +570,15 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // Download MP3
+    playbackSpeedBtn.addEventListener("click", () => {
+        const speeds = [1.0, 1.25, 1.5, 2.0];
+        const nextIdx = (speeds.indexOf(state.playbackSpeed) + 1) % speeds.length;
+        state.playbackSpeed = speeds[nextIdx];
+        audioPlayer.playbackRate = state.playbackSpeed;
+        playbackSpeedBtn.textContent = `${state.playbackSpeed.toFixed(1)}x`;
+        showToast(`ಪ್ಲೇಬ್ಯಾಕ್ ವೇಗ: ${state.playbackSpeed}x`);
+    });
+
     downloadBtn.addEventListener("click", () => {
         if (!state.currentAudioUrl) {
             showToast("ಮೊದಲು ಆಡಿಯೊ ಸಂಶ್ಲೇಷಿಸಿ ನಂತರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ");
@@ -512,7 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ==========================================
-    // 6. DUAL-CHANNEL CANVAS VISUALIZER
+    // 7. DUAL-CHANNEL CANVAS VISUALIZER
     // ==========================================
     function drawVisualizer() {
         requestAnimationFrame(drawVisualizer);
@@ -534,8 +616,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const y = (waveformCanvas.height - height) / 2;
 
             const grad = canvasCtx.createLinearGradient(0, waveformCanvas.height, 0, 0);
-            grad.addColorStop(0, "#f97316");
-            grad.addColorStop(1, "#ec4899");
+            grad.addColorStop(0, state.mode === "delivery" ? "#0284c7" : "#f97316");
+            grad.addColorStop(1, state.mode === "delivery" ? "#38bdf8" : "#ec4899");
 
             canvasCtx.fillStyle = grad;
             canvasCtx.beginPath();
@@ -546,9 +628,9 @@ document.addEventListener("DOMContentLoaded", () => {
     drawVisualizer();
 
     // ==========================================
-    // 7. PRESETS & HISTORY DRAWERS
+    // 8. PRESETS & HISTORY
     // ==========================================
-    async function loadPresetsFromApi() {
+    async function loadPresets() {
         try {
             const res = await fetch("/api/presets");
             if (res.ok) {
@@ -556,7 +638,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderPresets(data.categories);
             }
         } catch (e) {
-            console.warn("Could not load API presets, using fallback");
+            console.warn("Could not load presets");
         }
     }
 
@@ -573,9 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             modalCategories.appendChild(btn);
         });
-        if (categories.length > 0) {
-            renderSamples(categories[0].samples);
-        }
+        if (categories.length > 0) renderSamples(categories[0].samples);
     }
 
     function renderSamples(samples) {
@@ -590,12 +670,6 @@ document.addEventListener("DOMContentLoaded", () => {
             div.addEventListener("click", () => {
                 kannadaInput.value = item.text;
                 updateTextMetrics();
-
-                if (item.voiceId) {
-                    const targetCard = Array.from(voiceCards).find(c => c.dataset.voice === item.voiceId);
-                    if (targetCard) targetCard.click();
-                }
-
                 presetsModal.classList.add("hidden");
                 showToast(`"${item.title}" ಲೋಡ್ ಆಗಿದೆ!`);
             });
@@ -604,64 +678,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     openPresetsBtn.addEventListener("click", () => {
-        loadPresetsFromApi();
+        loadPresets();
         presetsModal.classList.remove("hidden");
     });
-
     closePresetsBtn.addEventListener("click", () => presetsModal.classList.add("hidden"));
     presetsModal.addEventListener("click", (e) => {
         if (e.target === presetsModal) presetsModal.classList.add("hidden");
     });
 
-    // History Drawer
-    openHistoryBtn.addEventListener("click", () => {
-        renderHistory();
-        historyDrawer.classList.remove("hidden");
-    });
-
-    closeHistoryBtn.addEventListener("click", () => historyDrawer.classList.add("hidden"));
-    historyDrawer.addEventListener("click", (e) => {
-        if (e.target === historyDrawer) historyDrawer.classList.add("hidden");
-    });
-
-    function renderHistory() {
-        historyList.innerHTML = "";
-        if (state.history.length === 0) {
-            historyList.innerHTML = '<p class="normalizer-tip" style="text-align:center;padding:20px;">ಯಾವುದೇ ಇತಿಹಾಸವಿಲ್ಲ (No recent clips)</p>';
-            return;
-        }
-        state.history.forEach((h, i) => {
-            const div = document.createElement("div");
-            div.className = "history-item";
-            div.innerHTML = `
-                <div class="history-title">⏱️ ${h.time} • ${h.voice}</div>
-                <div class="history-text">${h.text}</div>
-            `;
-            div.addEventListener("click", () => {
-                kannadaInput.value = h.text;
-                updateTextMetrics();
-                audioPlayer.src = h.url;
-                audioPlayer.play();
-                setPlaybackState("playing");
-                historyDrawer.classList.add("hidden");
-                showToast("ಇತಿಹಾಸದಿಂದ ಮರು-ನುಡಿಸಲಾಗುತ್ತಿದೆ...");
-            });
-            historyList.appendChild(div);
-        });
-    }
-
     // Theme Switcher
     themeToggleBtn.addEventListener("click", () => {
         state.theme = state.theme === "dark" ? "light" : "dark";
         document.documentElement.setAttribute("data-theme", state.theme);
-        showToast(state.theme === "dark" ? "ಡಾರ್ಕ್ ಮೋಡ್ (Dark Mode)" : "ಲೈಟ್ ಮೋಡ್ (Light Mode)");
+        showToast(state.theme === "dark" ? "ಡಾರ್ಕ್ ಮೋಡ್" : "ಲೈಟ್ ಮೋಡ್");
     });
 
-    // Keyboard Shortcuts (Ctrl+Enter to Play, Esc to Stop)
+    // Keyboard Shortcuts
     document.addEventListener("keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
-            synthesizeAndPlay();
+            playBtn.click();
         } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
             e.preventDefault();
             openPresetsBtn.click();
