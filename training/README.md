@@ -17,6 +17,15 @@ blank `training/data/metadata.csv`. Review every clip: remove music, other
 speakers, noise, and clips with inaccurate boundaries. Then fill the
 `transcript` field with the exact spoken text.
 
+To create drafts locally, install `faster-whisper` and run:
+
+```bash
+python3 training/transcribe_drafts.py training/data
+```
+
+This marks rows as `draft_transcript`; every draft must be corrected before
+changing its status to `approved`.
+
 For Kannada synthesis, Kannada transcripts and clean Kannada speech are the
 most useful training data. The supplied 12-minute recording is enough for a
 prototype after careful cleaning, but additional clean recordings improve
