@@ -1,0 +1,392 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10001012B50000100000001 /* DhvaniKannadaTTSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012B50000100000001 /* DhvaniKannadaTTSApp.swift */; };
+		A10001022B50000100000002 /* TTSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000022B50000100000002 /* TTSModels.swift */; };
+		A10001032B50000100000003 /* VoiceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000032B50000100000003 /* VoiceProfile.swift */; };
+		A10001042B50000100000004 /* KannadaPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000042B50000100000004 /* KannadaPresets.swift */; };
+		A10001052B50000100000005 /* TTSEngineProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000052B50000100000005 /* TTSEngineProtocol.swift */; };
+		A10001062B50000100000006 /* NativeTTSEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000062B50000100000006 /* NativeTTSEngine.swift */; };
+		A10001072B50000100000007 /* NeuralTTSEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000072B50000100000007 /* NeuralTTSEngine.swift */; };
+		A10001082B50000100000008 /* KannadaNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000082B50000100000008 /* KannadaNormalizer.swift */; };
+		A10001092B50000100000009 /* KannadaTransliterator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000092B50000100000009 /* KannadaTransliterator.swift */; };
+		A100010A2B5000010000000A /* AudioExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A2B5000010000000A /* AudioExporter.swift */; };
+		A100010B2B5000010000000B /* TTSViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000B2B5000010000000B /* TTSViewModel.swift */; };
+		A100010C2B5000010000000C /* AudioWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C2B5000010000000C /* AudioWaveformView.swift */; };
+		A100010D2B5000010000000D /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000D2B5000010000000D /* ShareSheet.swift */; };
+		A100010E2B5000010000000E /* VoiceSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000E2B5000010000000E /* VoiceSelectorView.swift */; };
+		A100010F2B5000010000000F /* ControlsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000F2B5000010000000F /* ControlsCardView.swift */; };
+		A10001102B50000100000010 /* TextEditorCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000102B50000100000010 /* TextEditorCardView.swift */; };
+		A10001112B50000100000011 /* PresetLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000112B50000100000011 /* PresetLibraryView.swift */; };
+		A10001122B50000100000012 /* MainTTSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000122B50000100000012 /* MainTTSView.swift */; };
+		A10001132B50000100000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000132B50000100000013 /* Assets.xcassets */; };
+		A10001152B50000100000015 /* CustomVoiceProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000152B50000100000015 /* CustomVoiceProfile.swift */; };
+		A10001162B50000100000016 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000162B50000100000016 /* AudioRecorder.swift */; };
+		A10001172B50000100000017 /* VoiceCloningEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000172B50000100000017 /* VoiceCloningEngine.swift */; };
+		A10001182B50000100000018 /* CustomVoiceManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000182B50000100000018 /* CustomVoiceManagerView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A10000002B50000100000000 /* DhvaniKannadaTTS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DhvaniKannadaTTS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000012B50000100000001 /* DhvaniKannadaTTSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DhvaniKannadaTTSApp.swift; sourceTree = "<group>"; };
+		A10000022B50000100000002 /* TTSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSModels.swift; sourceTree = "<group>"; };
+		A10000032B50000100000003 /* VoiceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProfile.swift; sourceTree = "<group>"; };
+		A10000042B50000100000004 /* KannadaPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KannadaPresets.swift; sourceTree = "<group>"; };
+		A10000052B50000100000005 /* TTSEngineProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSEngineProtocol.swift; sourceTree = "<group>"; };
+		A10000062B50000100000006 /* NativeTTSEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTTSEngine.swift; sourceTree = "<group>"; };
+		A10000072B50000100000007 /* NeuralTTSEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeuralTTSEngine.swift; sourceTree = "<group>"; };
+		A10000082B50000100000008 /* KannadaNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KannadaNormalizer.swift; sourceTree = "<group>"; };
+		A10000092B50000100000009 /* KannadaTransliterator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KannadaTransliterator.swift; sourceTree = "<group>"; };
+		A100000A2B5000010000000A /* AudioExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioExporter.swift; sourceTree = "<group>"; };
+		A100000B2B5000010000000B /* TTSViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSViewModel.swift; sourceTree = "<group>"; };
+		A100000C2B5000010000000C /* AudioWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioWaveformView.swift; sourceTree = "<group>"; };
+		A100000D2B5000010000000D /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		A100000E2B5000010000000E /* VoiceSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSelectorView.swift; sourceTree = "<group>"; };
+		A100000F2B5000010000000F /* ControlsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsCardView.swift; sourceTree = "<group>"; };
+		A10000102B50000100000010 /* TextEditorCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextEditorCardView.swift; sourceTree = "<group>"; };
+		A10000112B50000100000011 /* PresetLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetLibraryView.swift; sourceTree = "<group>"; };
+		A10000122B50000100000012 /* MainTTSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTTSView.swift; sourceTree = "<group>"; };
+		A10000132B50000100000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000142B50000100000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000152B50000100000015 /* CustomVoiceProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomVoiceProfile.swift; sourceTree = "<group>"; };
+		A10000162B50000100000016 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
+		A10000172B50000100000017 /* VoiceCloningEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCloningEngine.swift; sourceTree = "<group>"; };
+		A10000182B50000100000018 /* CustomVoiceManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomVoiceManagerView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000202B50000100000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000302B50000100000030 = {
+			isa = PBXGroup;
+			children = (
+				A10000312B50000100000031 /* DhvaniKannadaTTS */,
+				A10000322B50000100000032 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000312B50000100000031 /* DhvaniKannadaTTS */ = {
+			isa = PBXGroup;
+			children = (
+				A10000402B50000100000040 /* App */,
+				A10000412B50000100000041 /* Models */,
+				A10000422B50000100000042 /* Core */,
+				A10000432B50000100000043 /* ViewModels */,
+				A10000442B50000100000044 /* Views */,
+				A10000452B50000100000045 /* Resources */,
+			);
+			path = DhvaniKannadaTTS;
+			sourceTree = "<group>";
+		};
+		A10000402B50000100000040 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A10000012B50000100000001 /* DhvaniKannadaTTSApp.swift */,
+				A10000142B50000100000014 /* Info.plist */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A10000412B50000100000041 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A10000022B50000100000002 /* TTSModels.swift */,
+				A10000032B50000100000003 /* VoiceProfile.swift */,
+				A10000042B50000100000004 /* KannadaPresets.swift */,
+				A10000152B50000100000015 /* CustomVoiceProfile.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A10000422B50000100000042 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A10000052B50000100000005 /* TTSEngineProtocol.swift */,
+				A10000062B50000100000006 /* NativeTTSEngine.swift */,
+				A10000072B50000100000007 /* NeuralTTSEngine.swift */,
+				A10000172B50000100000017 /* VoiceCloningEngine.swift */,
+				A10000162B50000100000016 /* AudioRecorder.swift */,
+				A10000082B50000100000008 /* KannadaNormalizer.swift */,
+				A10000092B50000100000009 /* KannadaTransliterator.swift */,
+				A100000A2B5000010000000A /* AudioExporter.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A10000432B50000100000043 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A100000B2B5000010000000B /* TTSViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A10000442B50000100000044 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A100000C2B5000010000000C /* AudioWaveformView.swift */,
+				A100000D2B5000010000000D /* ShareSheet.swift */,
+				A100000E2B5000010000000E /* VoiceSelectorView.swift */,
+				A100000F2B5000010000000F /* ControlsCardView.swift */,
+				A10000102B50000100000010 /* TextEditorCardView.swift */,
+				A10000182B50000100000018 /* CustomVoiceManagerView.swift */,
+				A10000112B50000100000011 /* PresetLibraryView.swift */,
+				A10000122B50000100000012 /* MainTTSView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A10000452B50000100000045 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000132B50000100000013 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A10000322B50000100000032 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000002B50000100000000 /* DhvaniKannadaTTS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000502B50000100000050 /* DhvaniKannadaTTS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000602B50000100000060 /* Build configuration list for PBXNativeTarget "DhvaniKannadaTTS" */;
+			buildPhases = (
+				A10000512B50000100000051 /* Sources */,
+				A10000202B50000100000020 /* Frameworks */,
+				A10000522B50000100000052 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DhvaniKannadaTTS;
+			productName = DhvaniKannadaTTS;
+			productReference = A10000002B50000100000000 /* DhvaniKannadaTTS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000702B50000100000070 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A10000502B50000100000050 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A10000802B50000100000080 /* Build configuration list for PBXProject "DhvaniKannadaTTS" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10000302B50000100000030;
+			productRefGroup = A10000322B50000100000032 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000502B50000100000050 /* DhvaniKannadaTTS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000522B50000100000052 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001132B50000100000013 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000512B50000100000051 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001012B50000100000001 /* DhvaniKannadaTTSApp.swift in Sources */,
+				A10001022B50000100000002 /* TTSModels.swift in Sources */,
+				A10001032B50000100000003 /* VoiceProfile.swift in Sources */,
+				A10001042B50000100000004 /* KannadaPresets.swift in Sources */,
+				A10001052B50000100000005 /* TTSEngineProtocol.swift in Sources */,
+				A10001062B50000100000006 /* NativeTTSEngine.swift in Sources */,
+				A10001072B50000100000007 /* NeuralTTSEngine.swift in Sources */,
+				A10001082B50000100000008 /* KannadaNormalizer.swift in Sources */,
+				A10001092B50000100000009 /* KannadaTransliterator.swift in Sources */,
+				A100010A2B5000010000000A /* AudioExporter.swift in Sources */,
+				A100010B2B5000010000000B /* TTSViewModel.swift in Sources */,
+				A100010C2B5000010000000C /* AudioWaveformView.swift in Sources */,
+				A100010D2B5000010000000D /* ShareSheet.swift in Sources */,
+				A100010E2B5000010000000E /* VoiceSelectorView.swift in Sources */,
+				A100010F2B5000010000000F /* ControlsCardView.swift in Sources */,
+				A10001102B50000100000010 /* TextEditorCardView.swift in Sources */,
+				A10001112B50000100000011 /* PresetLibraryView.swift in Sources */,
+				A10001122B50000100000012 /* MainTTSView.swift in Sources */,
+				A10001152B50000100000015 /* CustomVoiceProfile.swift in Sources */,
+				A10001162B50000100000016 /* AudioRecorder.swift in Sources */,
+				A10001172B50000100000017 /* VoiceCloningEngine.swift in Sources */,
+				A10001182B50000100000018 /* CustomVoiceManagerView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A10000612B50000100000061 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DhvaniKannadaTTS/App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dhvani.KannadaTTS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A10000622B50000100000062 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DhvaniKannadaTTS/App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dhvani.KannadaTTS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A10000812B50000100000081 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A10000822B50000100000082 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000602B50000100000060 /* Build configuration list for PBXNativeTarget "DhvaniKannadaTTS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000612B50000100000061 /* Debug */,
+				A10000622B50000100000062 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000802B50000100000080 /* Build configuration list for PBXProject "DhvaniKannadaTTS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000812B50000100000081 /* Debug */,
+				A10000822B50000100000082 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = A10000702B50000100000070 /* Project object */;
+}
