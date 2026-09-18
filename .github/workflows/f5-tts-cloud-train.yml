@@ -1,0 +1,77 @@
+name: F5-TTS cloud training
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_dir:
+        description: "Absolute data directory on the cloud runner"
+        required: true
+        default: "/opt/dhvani-training/data"
+      epochs:
+        description: "Fine-tuning epochs"
+        required: true
+        default: "10"
+      prepare_only:
+        description: "Validate and prepare the dataset without starting training"
+        type: boolean
+        default: true
+
+jobs:
+  finetune:
+    # This label intentionally prevents the job from running on a standard
+    # GitHub runner or on the 8 GB Mac. Configure this label on a rented
+    # Ubuntu NVIDIA GPU machine that you register as a self-hosted runner.
+    runs-on: [self-hosted, linux, x64, gpu, f5-tts]
+    timeout-minutes: 330
+    env:
+      F5_DIR: ${{ runner.temp }}/F5-TTS
+      DATA_DIR: ${{ inputs.data_dir }}
+      PROJECT_NAME: dhvani_kn_custom
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify GPU and source data
+        run: |
+          nvidia-smi
+          test -f "$DATA_DIR/metadata.csv"
+          test -d "$DATA_DIR/wavs"
+
+      - name: Validate transcripts and export F5 manifest
+        run: |
+          python3 training/export_f5_manifest.py "$DATA_DIR" "$RUNNER_TEMP/metadata_f5.csv"
+
+      - name: Install F5-TTS on the cloud GPU
+        run: |
+          git clone --depth 1 https://github.com/SWivid/F5-TTS.git "$F5_DIR"
+          python3 -m venv "$RUNNER_TEMP/f5-env"
+          "$RUNNER_TEMP/f5-env/bin/pip" install --upgrade pip
+          "$RUNNER_TEMP/f5-env/bin/pip" install -e "$F5_DIR"
+
+      - name: Prepare dataset
+        run: |
+          "$RUNNER_TEMP/f5-env/bin/python" "$F5_DIR/src/f5_tts/train/datasets/prepare_csv_wavs.py" \
+            "$RUNNER_TEMP/metadata_f5.csv" "$F5_DIR/data/$PROJECT_NAME" --pretrain
+
+      - name: Fine-tune F5-TTS
+        if: ${{ !inputs.prepare_only }}
+        run: |
+          "$RUNNER_TEMP/f5-env/bin/f5-tts_finetune-cli" \
+            --exp_name F5TTS_v1_Base \
+            --dataset_name "$PROJECT_NAME" \
+            --tokenizer custom \
+            --tokenizer_path "$F5_DIR/data/$PROJECT_NAME/vocab.txt" \
+            --finetune \
+            --epochs "${{ inputs.epochs }}" \
+            --batch_size_per_gpu 1200 \
+            --batch_size_type frame \
+            --max_samples 32 \
+            --grad_accumulation_steps 4 \
+            --save_per_updates 500 \
+            --keep_last_n_checkpoints 3
+
+      - name: Preserve checkpoints on the cloud runner
+        if: ${{ !inputs.prepare_only }}
+        run: |
+          mkdir -p /opt/dhvani-training/checkpoints
+          cp -R "$F5_DIR/ckpts/$PROJECT_NAME" /opt/dhvani-training/checkpoints/

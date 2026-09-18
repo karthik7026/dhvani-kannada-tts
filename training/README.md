@@ -37,6 +37,22 @@ configuration at the reviewed WAV files and transcript manifest from
 `training/data/`. Do not start a training run until all transcripts have been
 checked: incorrect text teaches pronunciation errors.
 
+### GitHub Actions cloud runner
+
+This repository includes `.github/workflows/f5-tts-cloud-train.yml`. It runs
+only on a separately provisioned Ubuntu NVIDIA GPU machine registered with
+your repository as a self-hosted Actions runner labelled:
+
+```text
+self-hosted, linux, x64, gpu, f5-tts
+```
+
+Copy your private `training/data/` folder to `/opt/dhvani-training/data` on
+that machine; do not commit it. In `metadata.csv`, review each clip, enter the
+exact transcript, and change its status to `approved`. Run the workflow once
+with **prepare only** enabled. It will reject missing or unreviewed rows. Only
+then run it again with **prepare only** disabled to begin fine-tuning.
+
 ## 3. Serve the trained model
 
 After a successful fine-tune, place only the model configuration/checkpoint
