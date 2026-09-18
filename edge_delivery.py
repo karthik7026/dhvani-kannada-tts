@@ -78,8 +78,15 @@ async def synthesize_edge_tts(text: str, voice: str, rate: str, pitch: str, out_
 
 def mp3_to_wav(mp3_path: str, wav_path: str):
     import subprocess
-    subprocess.run(["ffmpeg", "-y", "-i", mp3_path, "-ac", "1", "-ar", "24000", wav_path],
-                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    import shutil
+    if shutil.which("ffmpeg"):
+        subprocess.run(["ffmpeg", "-y", "-i", mp3_path, "-ac", "1", "-ar", "24000", wav_path],
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    elif shutil.which("afconvert"):
+        subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@24000", "-c", "1", mp3_path, wav_path],
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    else:
+        raise RuntimeError("Neither ffmpeg nor afconvert found for audio conversion.")
 
 def analyze_audio_metrics(wav_path: str, text: str):
     """Calculate speaking rate, pause distributions, speech density."""

@@ -1,0 +1,32 @@
+[
+  {
+    "pace_setting": "-10%",
+    "pace_sylps": 4.84,
+    "speech_density_pct": 47.0
+  },
+  {
+    "pace_setting": "+0%",
+    "pace_sylps": 5.38,
+    "speech_density_pct": 46.8
+  },
+  {
+    "pace_setting": "+10%",
+    "pace_sylps": 5.92,
+    "speech_density_pct": 47.5
+  },
+  {
+    "pace_setting": "+20%",
+    "pace_sylps": 6.45,
+    "speech_density_pct": 46.8
+  },
+  {
+    "pace_setting": "+30%",
+    "pace_sylps": 6.99,
+    "speech_density_pct": 47.4
+  },
+  {
+    "pace_setting": "+40%",
+    "pace_sylps": 7.52,
+    "speech_density_pct": 48.6
+  }
+]
