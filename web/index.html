@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Tiro+Kannada:ital@0;1&family=Noto+Sans+Kannada:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-container">
@@ -45,8 +45,8 @@
             </button>
             <button id="tabDeliveryTransfer" class="mode-tab">
                 <span class="tab-icon">⚡</span>
-                <span class="tab-label">ಶೈಲಿ ವರ್ಗಾವಣೆ (Delivery Style Transfer)</span>
-                <span class="tab-badge">ಹೊಸದು (New)</span>
+                <span class="tab-label">ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (Expressive Voices)</span>
+                <span class="tab-badge">Built-in</span>
             </button>
         </div>
 
@@ -202,23 +202,22 @@
                 <div id="deliveryTransferPanel" class="mode-panel hidden">
                     <div class="delivery-hero-box">
                         <div class="hero-title">
-                            <span>⚡ ರೆಫರೆನ್ಸ್ ಶೈಲಿ ವರ್ಗಾವಣೆ (Delivery Prosody Transfer)</span>
+                            <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (Expressive Kannada Voices)</span>
                         </div>
                         <p class="hero-desc">
-                            ಯಾವುದೇ ಆಡಿಯೊ ಮಾದರಿಯನ್ನು (ತೆಲುಗು, ಇಂಗ್ಲಿಷ್, ಕನ್ನಡ, ಇತ್ಯಾದಿ) ಅಪ್‌ಲೋಡ್ ಮಾಡಿ. 
-                            ಸಿಸ್ಟಮ್ ಕೇವಲ ಅದರ <strong>ವೇಗ, ವಿರಾಮಗಳು (pauses), ಪಿಚ್ ಮೂವ್‌ಮೆಂಟ್ ಮತ್ತು ಎನರ್ಜಿ</strong>ಯನ್ನು ವಿಶ್ಲೇಷಿಸಿ, ನಿಮ್ಮ ಮೂಲ ಕನ್ನಡ ಧ್ವನಿಗೆ (Gagan/Sapna) ಅದೇ ಶೈಲಿಯನ್ನು ಅನ್ವಯಿಸುತ್ತದೆ.
+                            ಯಾವುದೇ ಫೈಲ್ ಅಪ್‌ಲೋಡ್ ಅಗತ್ಯವಿಲ್ಲ. Gagan ಅಥವಾ Sapna ಆಯ್ಕೆ ಮಾಡಿ; ಸ್ಟುಡಿಯೋ ಅವರ ಅಂತರ್ನಿರ್ಮಿತ ಕನ್ನಡ ನರ-ಧ್ವನಿಗೆ ಸ್ವಾಭಾವಿಕ ವೇಗ, ವಿರಾಮ ಮತ್ತು ಎನರ್ಜಿ ಹೊಂದಿಸುತ್ತದೆ.
                         </p>
                     </div>
 
                     <!-- Speaker Identity Selector (Strictly Gagan or Sapna) -->
                     <div class="section-block">
-                        <label class="section-label">👤 ಮೂಲ ಕನ್ನಡ ಧ್ವನಿ (Preserved Speaker Identity)</label>
+                        <label class="section-label">👤 ಅಂತರ್ನಿರ್ಮಿತ ಕನ್ನಡ ಧ್ವನಿ (Built-in Voice)</label>
                         <div class="identity-picker-row">
                             <button id="pickGaganBtn" class="identity-card active" data-voice="kn-IN-GaganNeural">
                                 <span class="id-icon">👨‍💼</span>
                                 <div class="id-text">
                                     <span class="id-name">Gagan (ಗಗನ್)</span>
-                                    <span class="id-sub">ಗಂಡು ಧ್ವನಿ • 100% ಮೂಲ ಕಂಠ</span>
+                                    <span class="id-sub">ಗಂಡು ಧ್ವನಿ • ಸ್ಪಷ್ಟ, ಉತ್ಸಾಹದ ವಾಚನ</span>
                                 </div>
                                 <span class="id-check">✓</span>
                             </button>
@@ -226,62 +225,17 @@
                                 <span class="id-icon">👩‍💼</span>
                                 <div class="id-text">
                                     <span class="id-name">Sapna (ಸ್ಪಪ್ನಾ)</span>
-                                    <span class="id-sub">ಹೆಣ್ಣು ಧ್ವನಿ • 100% ಮೂಲ ಕಂಠ</span>
+                                    <span class="id-sub">ಹೆಣ್ಣು ಧ್ವನಿ • ಮಧುರ, ಅಭಿವ್ಯಕ್ತಿಯ ವಾಚನ</span>
                                 </div>
                                 <span class="id-check">✓</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Reference Audio Upload Dropzone -->
-                    <div class="section-block">
-                        <label class="section-label">🎙️ ಮಾದರಿ ಆಡಿಯೊ (Reference Speaking Style)</label>
-                        <div class="upload-dropzone" id="deliveryDropzone">
-                            <input type="file" id="deliveryAudioInput" accept="audio/*" class="file-input">
-                            <label for="deliveryAudioInput" class="upload-label">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                <span id="deliveryFileName">ಆಡಿಯೊ ಫೈಲ್ ಆಯ್ಕೆ ಮಾಡಿ (.wav / .mp3)</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Analyze Delivery Button -->
-                    <button id="analyzeDeliveryBtn" class="btn btn-analyze" disabled>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <span>🔍 ಶೈಲಿ ವಿಶ್ಲೇಷಿಸಿ (Analyze Delivery Stats)</span>
-                    </button>
-
-                    <!-- Extracted Prosody Stats Cards -->
-                    <div id="deliveryStatsCard" class="stats-card-box hidden">
-                        <div class="stats-header">
-                            <span class="stats-badge">✓ ವಿಶ್ಲೇಷಿತ ಶೈಲಿ ಪ್ರೊಫೈಲ್</span>
-                            <span id="statsFilename" class="stats-meta">reference.mp3</span>
-                        </div>
-
-                        <div class="stats-grid">
-                            <div class="stat-pill">
-                                <span class="stat-lbl">⚡ ಮಾತನಾಡುವ ವೇಗ</span>
-                                <span id="statPace" class="stat-val">7.2 syl/s (+25%)</span>
-                            </div>
-                            <div class="stat-pill">
-                                <span class="stat-lbl">🎵 ಪಿಚ್ ರೇಂಜ್ / ಮೀಡಿಯನ್</span>
-                                <span id="statPitch" class="stat-val">176 Hz (8.4 st)</span>
-                            </div>
-                            <div class="stat-pill">
-                                <span class="stat-lbl">⏱️ ವಿರಾಮ ಮೀಡಿಯನ್</span>
-                                <span id="statPause" class="stat-val">150 ms (Short 73%)</span>
-                            </div>
-                            <div class="stat-pill">
-                                <span class="stat-lbl">🔥 ಡೈನಾಮಿಕ್ ಪಂಚ್</span>
-                                <span id="statPunch" class="stat-val">High (19.9 dB)</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Generate Styled Audio Button -->
                     <button id="generateStyledBtn" class="btn btn-generate-styled">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        <span>⚡ ಶೈಲಿಯೊಂದಿಗೆ ಸಂಶ್ಲೇಷಿಸಿ (Synthesize with Delivery)</span>
+                        <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ ರಚಿಸಿ (Create Expressive Audio)</span>
                     </button>
 
                     <!-- A/B Comparison Switcher -->
@@ -382,6 +336,6 @@
         <div id="toast" class="toast hidden"></div>
     </div>
 
-    <script src="/app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

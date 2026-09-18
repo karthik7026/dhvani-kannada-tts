@@ -18,22 +18,56 @@ import shutil
 import tempfile
 import hashlib
 import subprocess
+import numpy as np
+import soundfile as sf
 from typing import Dict, Any, List, Optional, Tuple
 
 # In-memory cache for extracted ProsodyProfiles: { audio_hash: profile_dict }
 PROSODY_PROFILE_CACHE: Dict[str, Dict[str, Any]] = {}
 
-def decode_audio_to_pcm(audio_bytes: bytes, target_sr: int = 24000) -> Tuple[List[float], int]:
+def _audio_suffix(audio_bytes: bytes) -> str:
+    """Infer a usable file suffix when an HTTP upload has no reliable path."""
+    header = audio_bytes[:16]
+    if header.startswith(b"RIFF") and header[8:12] == b"WAVE":
+        return ".wav"
+    if header.startswith(b"ID3") or header[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"):
+        return ".mp3"
+    if header[4:8] == b"ftyp":
+        return ".m4a"
+    return ".audio"
+
+def decode_audio_to_pcm(
+    audio_bytes: bytes, target_sr: int = 24000, max_duration_sec: Optional[float] = None
+) -> Tuple[List[float], int, float]:
     """
-    Decodes audio bytes (MP3/WAV/AAC/M4A) into float32 mono PCM samples [-1.0, 1.0]
-    using native macOS afconvert, ffmpeg, or python wave.
+    Decodes audio bytes (MP3/WAV/AAC/M4A) into mono PCM samples [-1.0, 1.0].
+    SoundFile is preferred because upload bytes do not retain a system-recognised
+    filename; afconvert/ffmpeg remain fallbacks for codecs it cannot read.
     """
-    with tempfile.NamedTemporaryFile(suffix=".input", delete=False) as in_f:
+    with tempfile.NamedTemporaryFile(suffix=_audio_suffix(audio_bytes), delete=False) as in_f:
         in_f.write(audio_bytes)
         in_path = in_f.name
 
     out_wav_path = in_path + ".wav"
     try:
+        try:
+            with sf.SoundFile(in_path) as source:
+                source_sr = source.samplerate
+                total_duration_sec = len(source) / source_sr
+                frames = len(source)
+                if max_duration_sec is not None:
+                    frames = min(frames, int(max_duration_sec * source_sr))
+                decoded = source.read(frames=frames, dtype="float32", always_2d=True)
+
+            mono = decoded.mean(axis=1)
+            if source_sr != target_sr and len(mono) > 1:
+                output_size = max(1, round(len(mono) * target_sr / source_sr))
+                positions = np.linspace(0, len(mono) - 1, output_size)
+                mono = np.interp(positions, np.arange(len(mono)), mono).astype(np.float32)
+            return mono.tolist(), target_sr, total_duration_sec
+        except (RuntimeError, OSError, ValueError):
+            pass
+
         if shutil.which("afconvert"):
             subprocess.run([
                 "afconvert", "-f", "WAVE", "-d", f"LEI16@{target_sr}", "-c", "1",
@@ -57,7 +91,7 @@ def decode_audio_to_pcm(audio_bytes: bytes, target_sr: int = 24000) -> Tuple[Lis
         count = len(raw) // 2
         ints = struct.unpack(f"<{count}h", raw)
         samples = [val / 32768.0 for val in ints]
-        return samples, sr
+        return samples, sr, len(samples) / sr
     finally:
         for p in [in_path, out_wav_path]:
             if os.path.exists(p):
@@ -89,8 +123,9 @@ class DeliveryProfiler:
             return cached
 
         try:
-            samples_all, sr = decode_audio_to_pcm(audio_bytes, target_sr=24000)
-            total_duration_sec = len(samples_all) / sr
+            samples_all, sr, total_duration_sec = decode_audio_to_pcm(
+                audio_bytes, target_sr=24000, max_duration_sec=max_duration_sec
+            )
 
             # Trim to max_duration_sec for clean analysis
             max_samples = int(max_duration_sec * sr)

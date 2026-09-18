@@ -25,6 +25,19 @@ except ImportError:
         @staticmethod
         def normalize(t): return t
 
+# Built-in expressive delivery, measured from the user-provided high-quality
+# reference recording (30-second analysis). It controls prosody only: no
+# speaker embedding, voice identity, or audio samples are reused at synthesis.
+BUILTIN_EXPRESSIVE_PROFILE: Dict[str, Any] = {
+    "profile_id": "builtin_expressive_v2",
+    "speaking_rate": {"pace_syl_sec": 8.5, "pace_multiplier": 1.45, "tempo_category": "Fast Presenter"},
+    "pitch_dynamics": {"median_hz": 187.5, "range_hz": 78.3, "span_semitones": 7.34, "ending_slope": "neutral_cadence"},
+    "pauses": {"count": 57, "median_ms": 130.0, "p90_ms": 680.0, "pause_ratio_pct": 49.2,
+               "distribution": {"short_pct": 71.9, "medium_pct": 14.0, "long_pct": 14.0}},
+    "energy_and_punch": {"crest_factor_db": 25.3, "energy_punch": 1.44, "transition_contrast": "High Dynamic Range"},
+    "phrasing": {"target_phrase_aksharas": 16, "median_breath_sec": 0.07, "p90_breath_sec": 0.19},
+}
+
 def count_aksharas(text: str) -> int:
     """Calculates Kannada syllable count based on akshara phonology."""
     text = unicodedata.normalize("NFC", text)
@@ -178,18 +191,55 @@ class KannadaProsodyMapper:
         import edge_tts
 
         if prosody_profile is None:
-            from delivery_profiler import DeliveryProfiler
-            prosody_profile = DeliveryProfiler.extract_prosody_profile(b"")
+            prosody_profile = BUILTIN_EXPRESSIVE_PROFILE
 
         # 1. Normalize text
         norm_text = KannadaNormalizer.normalize(kannada_text.strip())
 
-        # 2. Target phrase length based on reference breath-group
+        # 2. Speaker Voice Identity (Gagan or Sapna)
+        actual_voice = "kn-IN-GaganNeural" if ("gagan" in voice.lower() or "male" in voice.lower()) else "kn-IN-SapnaNeural"
+
+        # The built-in style must remain a single Edge utterance. Splitting a
+        # sentence into many tiny requests makes Edge add end-of-utterance
+        # silence to every word-sized fragment, which sounds like 2–3 s gaps.
+        if prosody_profile is None or prosody_profile.get("profile_id") == "builtin_expressive_v2":
+            import edge_tts
+
+            # Apply measured delivery to one complete utterance. The 45%
+            # reference pace multiplier is softened to Edge's natural range;
+            # splitting at every breath group would add artificial silence.
+            reference_rate = prosody_profile["speaking_rate"]["pace_multiplier"]
+            rate_delta = int(np.clip(round((reference_rate - 1.0) * 45), 0, 20))
+            rate = f"+{rate_delta}%"
+            # Keep each selected voice recognisable while transferring the
+            # reference's more animated contour and energetic delivery.
+            pitch = "-3Hz" if actual_voice == "kn-IN-GaganNeural" else "+2Hz"
+            communicate = edge_tts.Communicate(
+                text=norm_text,
+                voice=actual_voice,
+                pitch=pitch,
+                rate=rate,
+                volume="+3%",
+            )
+            audio_buffer = io.BytesIO()
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_buffer.write(chunk["data"])
+            audio_bytes = audio_buffer.getvalue()
+            if not audio_bytes:
+                raise RuntimeError("No audio generated")
+            return audio_bytes, {
+                "voice_used": actual_voice,
+                "phrase_count": 1,
+                "applied_plan": [{"phrase": norm_text, "pitch": pitch, "rate": rate, "pause_after_ms": 0}],
+                "overall_pace": prosody_profile["speaking_rate"]["pace_syl_sec"],
+                "dynamic_punch": prosody_profile["energy_and_punch"]["energy_punch"],
+                "duration_sec": 0.0,
+            }
+
+        # 3. Target phrase length based on an uploaded reference breath-group
         target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 12)
         phrases = cls.segment_kannada_text(norm_text, target_aksharas=target_aksharas)
-
-        # 3. Speaker Voice Identity (Strictly Gagan or Sapna)
-        actual_voice = "kn-IN-GaganNeural" if ("gagan" in voice.lower() or "male" in voice.lower()) else "kn-IN-SapnaNeural"
 
         temp_dir = tempfile.mkdtemp(prefix="dhvani_delivery_")
         pcm_chunks = []

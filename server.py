@@ -310,9 +310,7 @@ async def synthesize_speech(payload: dict = Body(...)):
     normalized_text = KannadaNormalizer.normalize(text)
     
     actual_voice = "kn-IN-SapnaNeural"
-    if voice == "kn-IN-GaganNeural" or voice == "news-anchor" or "gagan" in voice.lower() or "male" in voice.lower():
-        actual_voice = "kn-IN-GaganNeural"
-    elif voice == "podcast-narrator":
+    if voice == "podcast-narrator":
         actual_voice = "kn-IN-GaganNeural"
         pitch = "-4Hz"
         rate = "+26%"
@@ -321,6 +319,8 @@ async def synthesize_speech(payload: dict = Body(...)):
         actual_voice = "kn-IN-GaganNeural"
         pitch = "+2Hz"
         rate = "+18%"
+    elif voice == "kn-IN-GaganNeural" or "gagan" in voice.lower() or "male" in voice.lower():
+        actual_voice = "kn-IN-GaganNeural"
     elif voice == "storyteller":
         actual_voice = "kn-IN-SapnaNeural"
         pitch = "-1Hz"
@@ -363,20 +363,13 @@ async def synthesize_speech(payload: dict = Body(...)):
         )
 
     except Exception as e:
-        sample_rate = 24000
-        duration = max(1.0, len(normalized_text) * 0.12)
-        num_samples = int(sample_rate * duration)
-        wav_io = io.BytesIO()
-        with wave.open(wav_io, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)
-            wf.setframerate(sample_rate)
-            freq = 220.0
-            for i in range(num_samples):
-                val = int(14000.0 * math.sin(2.0 * math.pi * freq * (i / sample_rate)))
-                wf.writeframes(struct.pack('<h', val))
-        wav_io.seek(0)
-        return Response(content=wav_io.read(), media_type="audio/wav")
+        # A tone is not a useful substitute for speech.  Returning success here
+        # made failed synthesis look like a working TTS result in the browser.
+        print(f"Edge TTS synthesis failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Kannada speech service is unavailable. Check your internet connection and try again."
+        ) from e
 
 # ==========================================
 # STATIC FILES & WEB STUDIO MOUNT
@@ -402,4 +395,5 @@ if __name__ == "__main__":
     print("  ಧ್ವನಿ KANNADA TEXT-TO-SPEECH WEB STUDIO IS RUNNING!           ")
     print("  Open in browser: http://localhost:8000                         ")
     print("================================================================")
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    # File watching is optional and may be unavailable on restricted systems.
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)

@@ -3,6 +3,12 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Relative assets work from file://; API requests still target the local
+    // server when the HTML file is opened directly.
+    const apiUrl = (path) => window.location.protocol === "file:"
+        ? `http://127.0.0.1:8000${path}`
+        : path;
+
     // Studio State
     const state = {
         mode: "standard",   // "standard" or "delivery"
@@ -14,8 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
         preset: "natural",
         playbackSpeed: 1.0,
         isTranslitOn: false,
-        uploadedAudioFile: null,
-        deliveryProfile: null,
         isPlaying: false,
         isLoading: false,
         currentAudioUrl: null,
@@ -52,15 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Delivery Transfer Mode Elements
     const pickGaganBtn = document.getElementById("pickGaganBtn");
     const pickSapnaBtn = document.getElementById("pickSapnaBtn");
-    const deliveryAudioInput = document.getElementById("deliveryAudioInput");
-    const deliveryFileName = document.getElementById("deliveryFileName");
-    const analyzeDeliveryBtn = document.getElementById("analyzeDeliveryBtn");
-    const deliveryStatsCard = document.getElementById("deliveryStatsCard");
-    const statsFilename = document.getElementById("statsFilename");
-    const statPace = document.getElementById("statPace");
-    const statPitch = document.getElementById("statPitch");
-    const statPause = document.getElementById("statPause");
-    const statPunch = document.getElementById("statPunch");
     const generateStyledBtn = document.getElementById("generateStyledBtn");
     const abComparisonBox = document.getElementById("abComparisonBox");
     const playNormalABBtn = document.getElementById("playNormalABBtn");
@@ -117,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
         tabNormalTTS.classList.remove("active");
         deliveryTransferPanel.classList.remove("hidden");
         standardTTSPanel.classList.add("hidden");
-        updateStatusMeta("Delivery Transfer", "ರೆಫರೆನ್ಸ್ ಶೈಲಿ");
+        updateStatusMeta("Expressive Voice", "ಅಂತರ್ನಿರ್ಮಿತ ಶೈಲಿ");
     });
 
     // ==========================================
@@ -143,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         try {
-            const res = await fetch("/api/normalize", {
+            const res = await fetch(apiUrl("/api/normalize"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text })
@@ -220,6 +215,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==========================================
     // 4. STANDARD TTS VOICE & SLIDER CONTROLS
     // ==========================================
+    function invalidateGeneratedAudio() {
+        audioPlayer.pause();
+        audioPlayer.removeAttribute("src");
+        audioPlayer.load();
+        for (const url of new Set([state.currentAudioUrl, state.normalAudioUrl, state.styledAudioUrl])) {
+            if (url) URL.revokeObjectURL(url);
+        }
+        state.currentAudioUrl = null;
+        state.normalAudioUrl = null;
+        state.styledAudioUrl = null;
+        setPlaybackState("stopped");
+    }
+
     voiceCards.forEach(card => {
         card.addEventListener("click", () => {
             voiceCards.forEach(c => c.classList.remove("active"));
@@ -231,15 +239,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
             state.gender = gender;
             state.voice = voice || "kn-IN-GaganNeural";
+            invalidateGeneratedAudio();
 
             if (preset === "podcast") {
                 applyPreset("podcast", -4, 1.26);
             } else if (preset === "news") {
                 applyPreset("news", 2, 1.18);
             } else if (gender === "female") {
-                applyPreset("natural", 0, 1.0);
+                applyPreset("natural", 2, 1.0);
             } else if (gender === "male") {
-                applyPreset("natural", -2, 1.0);
+                applyPreset("natural", -5, 0.95);
             }
         });
     });
@@ -261,12 +270,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     pitchSlider.addEventListener("input", () => {
         state.pitch = parseInt(pitchSlider.value);
+        invalidateGeneratedAudio();
         pitchValue.textContent = `${state.pitch > 0 ? '+' : ''}${state.pitch} Hz`;
         updateStatusMeta();
     });
 
     rateSlider.addEventListener("input", () => {
         state.rate = parseFloat(rateSlider.value);
+        invalidateGeneratedAudio();
         rateValue.textContent = `${state.rate.toFixed(2)}x`;
         updateStatusMeta();
         updateTextMetrics();
@@ -275,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateStatusMeta(customName, customPreset) {
         if (state.mode === "delivery") {
             const vName = state.voice.includes("Sapna") ? "Sapna" : "Gagan";
-            activeVoiceInfo.textContent = `${vName} • ⚡ ಶೈಲಿ ವರ್ಗಾವಣೆ (Delivery Transfer)`;
+            activeVoiceInfo.textContent = `${vName} • ⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (Expressive Voice)`;
         } else {
             const activeCard = document.querySelector(".voice-card.active");
             const voiceName = customName || (activeCard ? activeCard.querySelector(".voice-name").textContent : "Gagan");
@@ -290,6 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
         pickGaganBtn.classList.add("active");
         pickSapnaBtn.classList.remove("active");
         state.voice = "kn-IN-GaganNeural";
+        invalidateGeneratedAudio();
         updateStatusMeta();
         showToast("ಧ್ವನಿ: Gagan (ಗಗನ್) ಆಯ್ಕೆಯಾಗಿದೆ");
     });
@@ -298,68 +310,12 @@ document.addEventListener("DOMContentLoaded", () => {
         pickSapnaBtn.classList.add("active");
         pickGaganBtn.classList.remove("active");
         state.voice = "kn-IN-SapnaNeural";
+        invalidateGeneratedAudio();
         updateStatusMeta();
         showToast("ಧ್ವನಿ: Sapna (ಸ್ಪಪ್ನಾ) ಆಯ್ಕೆಯಾಗಿದೆ");
     });
 
-    deliveryAudioInput.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            state.uploadedAudioFile = file;
-            deliveryFileName.textContent = `✓ ${file.name}`;
-            analyzeDeliveryBtn.disabled = false;
-            showToast(`ಆಡಿಯೊ ಫೈಲ್ ಲೋಡ್ ಆಗಿದೆ: ${file.name}`);
-        }
-    });
-
-    // 5a. Analyze Delivery Prosody Profile
-    analyzeDeliveryBtn.addEventListener("click", async () => {
-        if (!state.uploadedAudioFile) {
-            showToast("ದಯವಿಟ್ಟು ಆಡಿಯೊ ಫೈಲ್ ಆಯ್ಕೆ ಮಾಡಿ");
-            return;
-        }
-
-        analyzeDeliveryBtn.disabled = true;
-        analyzeDeliveryBtn.innerHTML = `<span>ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...</span>`;
-
-        try {
-            const formData = new FormData();
-            formData.append("reference_audio", state.uploadedAudioFile);
-
-            const res = await fetch("/api/analyze_delivery", {
-                method: "POST",
-                body: formData
-            });
-
-            if (!res.ok) throw new Error("Delivery analysis failed");
-
-            const profile = await res.json();
-            state.deliveryProfile = profile;
-
-            // Render stats card
-            statsFilename.textContent = fileBasename(state.uploadedAudioFile.name);
-            statPace.textContent = `${profile.speaking_rate.pace_syl_sec} syl/s (${profile.speaking_rate.tempo_category})`;
-            statPitch.textContent = `${profile.pitch_dynamics.median_hz} Hz (${profile.pitch_dynamics.span_semitones} st, ${profile.pitch_dynamics.ending_slope})`;
-            statPause.textContent = `${profile.pauses.median_ms} ms (Short: ${profile.pauses.distribution.short_pct}%)`;
-            statPunch.textContent = `${profile.energy_and_punch.transition_contrast} (${profile.energy_and_punch.crest_factor_db} dB)`;
-
-            deliveryStatsCard.classList.remove("hidden");
-            analyzeDeliveryBtn.innerHTML = `<span>✓ ಶೈಲಿ ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ (Analyzed)</span>`;
-            showToast("ರೆಫರೆನ್ಸ್ ಶೈಲಿ ವಿಶ್ಲೇಷಣೆ ಯಶಸ್ವಿಯಾಗಿದೆ!");
-
-        } catch (err) {
-            console.error(err);
-            analyzeDeliveryBtn.disabled = false;
-            analyzeDeliveryBtn.innerHTML = `<span>🔍 ಶೈಲಿ ವಿಶ್ಲೇಷಿಸಿ (Analyze Delivery)</span>`;
-            showToast(`ದೋಷ: ${err.message}`);
-        }
-    });
-
-    function fileBasename(name) {
-        return name.length > 25 ? name.substring(0, 22) + "..." : name;
-    }
-
-    // 5b. Synthesize with Delivery Prosody
+    // 5. Synthesize with the built-in expressive Gagan or Sapna preset.
     generateStyledBtn.addEventListener("click", () => {
         synthesizeDeliveryStyled();
     });
@@ -378,13 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append("text", text);
             formData.append("voice", state.voice);
 
-            if (state.deliveryProfile) {
-                formData.append("profile_json", JSON.stringify(state.deliveryProfile));
-            } else if (state.uploadedAudioFile) {
-                formData.append("reference_audio", state.uploadedAudioFile);
-            }
-
-            const res = await fetch("/api/synthesize_delivery", {
+            const res = await fetch(apiUrl("/api/synthesize_delivery"), {
                 method: "POST",
                 body: formData
             });
@@ -422,7 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Synthesize normal if not cached
         if (!state.normalAudioUrl) {
             setPlaybackState("loading");
-            const res = await fetch("/api/synthesize", {
+            const res = await fetch(apiUrl("/api/synthesize"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -497,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const rateDelta = Math.round((state.rate - 1.0) * 100);
             const rateStr = `${rateDelta >= 0 ? '+' : ''}${rateDelta}%`;
 
-            const res = await fetch("/api/synthesize", {
+            const res = await fetch(apiUrl("/api/synthesize"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -632,7 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==========================================
     async function loadPresets() {
         try {
-            const res = await fetch("/api/presets");
+            const res = await fetch(apiUrl("/api/presets"));
             if (res.ok) {
                 const data = await res.json();
                 renderPresets(data.categories);

@@ -2,3 +2,7 @@ fastapi>=0.100.0
 uvicorn[standard]>=0.22.0
 edge-tts>=6.1.9
 python-multipart>=0.0.6
+numpy>=1.26.0
+scipy>=1.11.0
+pydub>=0.25.1
+soundfile>=0.12.1
