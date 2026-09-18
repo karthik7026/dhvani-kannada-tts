@@ -74,3 +74,12 @@ from this repository to prevent accidental publication.
 Only train a voice with the speaker's permission. Before sharing this project,
 verify that `training/data/`, model checkpoints, and original recordings are
 not staged for commit.
+
+## Free Kaggle GPU fallback
+
+`kaggle_free_gpu.ipynb` is a restartable free-GPU path. Create a **private**
+Kaggle dataset containing the reviewed `metadata.csv` and `wavs/` directory,
+then attach it to the notebook as `dhvani-private-voice-data`. Kaggle's free
+GPUs have variable availability and limited VRAM, so this path may stop or run
+out of memory; it is suitable for an initial experiment, not a guaranteed
+training service. Never make the voice dataset or checkpoints public.
