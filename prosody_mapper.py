@@ -229,6 +229,20 @@ def apply_broadcast_mastering(pcm_data: np.ndarray, sr: int = DEFAULT_SAMPLE_RAT
 
     return mastered
 
+def apply_smooth_micro_fades(pcm: np.ndarray, sr: int = DEFAULT_SAMPLE_RATE, fade_ms: float = 4.0) -> np.ndarray:
+    """
+    Applies a 4ms raised-cosine micro fade-in and fade-out to prevent any waveform edge click
+    or phase discontinuity at phrase boundaries.
+    """
+    fade_samples = int((fade_ms / 1000.0) * sr)
+    if len(pcm) < 2 * fade_samples or fade_samples <= 0:
+        return pcm
+    out = pcm.copy()
+    fade_curve = np.linspace(0.0, 1.0, fade_samples, dtype=np.float32)
+    out[:fade_samples] *= fade_curve
+    out[-fade_samples:] *= fade_curve[::-1]
+    return out
+
 class KannadaProsodyMapper:
     """
     Translates statistical Delivery Prosody into Kannada phrase-level TTS parameters
@@ -367,47 +381,60 @@ class KannadaProsodyMapper:
         # -------------------------------------------------------------
         # 4-PHASE DYNAMIC PROSODIC CYCLE (Conversational Human Range)
         # -------------------------------------------------------------
+        punct = phrase.get("punct", "")
+
         if is_question:
             # 1. Rhetorical Question Peak (+7Hz to +9Hz)
             pitch_hz = int(round((7 if is_male else 9) * p_scale))
             applied_rate = min(8, base_rate + 2)
-            pause_ms = int(base_sentence_pause * cfg["pause_mult"])
+            pause_ms = int(base_sentence_pause * 1.15 * cfg["pause_mult"])
             tag = "❓ Rhetorical Question Peak"
 
         elif is_exclamation:
             # 2. Exclamatory Punch (+5Hz to +7Hz)
             pitch_hz = int(round((5 if is_male else 7) * p_scale))
             applied_rate = min(8, base_rate + 2)
-            pause_ms = int(base_sentence_pause * 0.9 * cfg["pause_mult"])
+            pause_ms = int(base_sentence_pause * 1.08 * cfg["pause_mult"])
             tag = "📢 Exclamatory Punch"
 
-        elif has_focus and not is_sentence_end:
-            # 3. Focus Entity Gravitas & Emphasis (+3Hz to +5Hz with gentle deceleration)
-            pitch_hz = int(round((4 if is_male else 5) * p_scale))
-            applied_rate = max(-3, base_rate - 2)
-            pause_ms = int(base_focus_pause * cfg["pause_mult"])
-            tag = "🎯 Focus Entity Gravitas"
-
         elif is_sentence_end:
-            # 4. Grounded Statement Landing (-3Hz to -4Hz natural cadence fall)
+            # 3. Grounded Statement Landing (-3Hz to -4Hz natural cadence fall)
             pitch_hz = int(round((-3 if is_male else -4) * p_scale))
             applied_rate = max(-3, base_rate - 2)
             pause_ms = int(base_sentence_pause * cfg["pause_mult"])
             tag = "💥 Authoritative Cadence Fall"
 
         elif phrase_index == 0 or phrase_index % 3 == 0:
-            # 5. Setup Clause (+3Hz to +4Hz)
+            # 4. Setup Clause (+3Hz to +4Hz)
             pitch_hz = int(round((3 if is_male else 4) * p_scale))
             applied_rate = min(8, base_rate + 2)
             pause_ms = int(base_setup_pause * cfg["pause_mult"])
             tag = "⚡ Setup Clause"
 
         else:
-            # 6. Anticipation Build (+2Hz to +3Hz)
+            # 5. Anticipation Build (+2Hz to +3Hz)
             pitch_hz = int(round((2 if is_male else 3) * p_scale))
             applied_rate = base_rate
             pause_ms = int(base_anticipation_pause * cfg["pause_mult"])
             tag = "📈 Anticipation Build-Up"
+
+        # Context-Aware Punctuation Refinements
+        if not is_sentence_end:
+            if "—" in punct or "-" in punct or ":" in punct:
+                pause_ms = int(110 * cfg["pause_mult"])
+            elif ";" in punct:
+                pause_ms = int(90 * cfg["pause_mult"])
+            elif "(" in punct or ")" in punct:
+                pause_ms = int(80 * cfg["pause_mult"])
+
+        # Automatic Entity Gravity: numbers, currency, dates, percentages, tech terms
+        # Human creators deliver factual figures with deliberate acoustic weight
+        if has_focus:
+            applied_rate = max(-3, applied_rate - 2)
+            pitch_hz = min(8, pitch_hz + 2)
+            if not is_sentence_end:
+                pause_ms = max(pause_ms, int(base_focus_pause * cfg["pause_mult"]))
+            tag = "🎯 Focus Entity Gravitas"
 
         applied_rate = _bounded(applied_rate, "MIN_RATE", "MAX_RATE")
         pitch_hz = _bounded(pitch_hz, "MIN_PITCH", "MAX_PITCH")
@@ -787,8 +814,9 @@ class KannadaProsodyMapper:
                         subprocess.run(["ffmpeg", "-y", "-i", mp3_path, "-ac", "1", "-ar", str(sr), wav_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                     with wave.open(wav_path, "rb") as wf:
                         raw = wf.readframes(wf.getnframes())
-                        data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-                    pcm_chunks.append(trim_silence_pcm(data, sr=sr, thresh_db=-42.0, pad_ms=24))
+                    trimmed_pcm = trim_silence_pcm(data, sr=sr, thresh_db=-42.0, pad_ms=24)
+                    smooth_pcm = apply_smooth_micro_fades(trimmed_pcm, sr=sr, fade_ms=4.0)
+                    pcm_chunks.append(smooth_pcm)
                     if segment_index < len(local_segments) - 1:
                         pcm_chunks.append(np.zeros(int(0.11 * sr), dtype=np.float32))
 
