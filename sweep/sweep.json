@@ -1,32 +1,32 @@
 [
   {
     "pace_setting": "-10%",
-    "pace_sylps": 4.84,
-    "speech_density_pct": 47.0
+    "speech_activity_ratio_pct": 80.1,
+    "pitch_movement_span_hz": 45.3
   },
   {
     "pace_setting": "+0%",
-    "pace_sylps": 5.38,
-    "speech_density_pct": 46.8
+    "speech_activity_ratio_pct": 82.7,
+    "pitch_movement_span_hz": 45.6
   },
   {
     "pace_setting": "+10%",
-    "pace_sylps": 5.92,
-    "speech_density_pct": 47.5
+    "speech_activity_ratio_pct": 82.6,
+    "pitch_movement_span_hz": 45.6
   },
   {
     "pace_setting": "+20%",
-    "pace_sylps": 6.45,
-    "speech_density_pct": 46.8
+    "speech_activity_ratio_pct": 82.7,
+    "pitch_movement_span_hz": 45.0
   },
   {
     "pace_setting": "+30%",
-    "pace_sylps": 6.99,
-    "speech_density_pct": 47.4
+    "speech_activity_ratio_pct": 81.9,
+    "pitch_movement_span_hz": 44.3
   },
   {
     "pace_setting": "+40%",
-    "pace_sylps": 7.52,
-    "speech_density_pct": 48.6
+    "speech_activity_ratio_pct": 82.4,
+    "pitch_movement_span_hz": 44.8
   }
 ]
