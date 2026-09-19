@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Kannada Prosody Mapper (ಕನ್ನಡ ಧ್ವನಿ ವಿತರಣಾ ಮ್ಯಾಪರ್)
+Kannada Prosody Mapper (ಕನ್ನಡ ಧ್ವನಿ ವಿತರಣಾ ಮ್ಯಾಪರ್) - High-Impact Expressive Presenter Engine
 Maps language-agnostic ProsodyProfile delivery statistics onto Kannada text structures
-using safe, clamped Edge-TTS controls (rate, pitch contours, pause durations, emphasis)
-while preserving 100% of the speaker voice identity (Gagan / Sapna).
+using akshara-aware phrase segmentation, dynamic pitch/speed inflections, silence-trimmed breath pauses,
+and broadcast mastering while strictly preserving 100% of the speaker voice identity (Gagan / Sapna).
 """
 
 import os
@@ -17,6 +17,7 @@ import subprocess
 import unicodedata
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
+from scipy import signal
 
 try:
     from kannada_normalizer import KannadaNormalizer
@@ -25,9 +26,8 @@ except ImportError:
         @staticmethod
         def normalize(t): return t
 
-# Built-in expressive delivery, measured from the user-provided high-quality
-# reference recording (30-second analysis). It controls prosody only: no
-# speaker embedding, voice identity, or audio samples are reused at synthesis.
+# Built-in expressive delivery, measured from the high-energy reference presenter recording.
+# Controls prosody only: no speaker timbre/embedding is modified.
 BUILTIN_EXPRESSIVE_PROFILE: Dict[str, Any] = {
     "profile_id": "builtin_expressive_v2",
     "speaking_rate": {"pace_syl_sec": 8.5, "pace_multiplier": 1.45, "tempo_category": "Fast Presenter"},
@@ -57,13 +57,84 @@ def count_aksharas(text: str) -> int:
             count += 1
     return max(1, count)
 
+def trim_silence_pcm(samples: np.ndarray, sr: int = 24000, thresh_db: float = -38.0, pad_ms: int = 15) -> np.ndarray:
+    """
+    Trims leading and trailing silence from Edge-TTS generated audio chunk,
+    leaving a clean 15ms safety margin for natural phonetic onset and decay.
+    """
+    if len(samples) == 0:
+        return samples
+    abs_samples = np.abs(samples)
+    peak = np.max(abs_samples)
+    if peak < 1e-4:
+        return samples
+
+    thresh = peak * (10.0 ** (thresh_db / 20.0))
+    win_len = int(0.010 * sr) # 10ms window
+    pad_samples = int((pad_ms / 1000.0) * sr)
+
+    kernel = np.ones(win_len) / win_len
+    energy = np.convolve(abs_samples, kernel, mode='same')
+
+    above = np.where(energy > thresh)[0]
+    if len(above) == 0:
+        return samples
+
+    start_idx = max(0, above[0] - pad_samples)
+    end_idx = min(len(samples), above[-1] + pad_samples)
+    return samples[start_idx:end_idx]
+
+def apply_broadcast_mastering(pcm_data: np.ndarray, sr: int = 24000, punch: float = 1.35) -> np.ndarray:
+    """
+    Applies professional vocal mastering:
+    1. 3.2kHz Peaking EQ (+3.2 dB vocal presence boost for speech intelligibility)
+    2. Tanh soft-knee dynamic punch compressor (upfront YouTube presenter presence)
+    3. True-peak broadcast normalization to -0.5 dBFS (0.95 peak)
+    """
+    if len(pcm_data) == 0:
+        return pcm_data
+
+    # 1. 3.2 kHz Vocal Presence EQ (2nd order biquad peaking filter)
+    f0 = 3200.0
+    Q = 1.0
+    gain_db = 3.2
+    A = 10.0 ** (gain_db / 40.0)
+    w0 = 2.0 * np.pi * f0 / sr
+    alpha = np.sin(w0) / (2.0 * Q)
+
+    b0 = 1.0 + alpha * A
+    b1 = -2.0 * np.cos(w0)
+    b2 = 1.0 - alpha * A
+    a0 = 1.0 + alpha / A
+    a1 = -2.0 * np.cos(w0)
+    a2 = 1.0 - alpha / A
+
+    b = np.array([b0, b1, b2]) / a0
+    a = np.array([a0, a1, a2]) / a0
+
+    filtered = signal.lfilter(b, a, pcm_data)
+
+    # 2. Dynamic Punch Soft-Knee Saturation
+    boosted = filtered * max(1.0, min(1.6, punch))
+    compressed = np.tanh(boosted)
+
+    # 3. Peak Normalization to 0.95 (-0.5 dBFS)
+    max_peak = np.max(np.abs(compressed))
+    if max_peak > 1e-4:
+        mastered = compressed / max_peak * 0.95
+    else:
+        mastered = compressed
+
+    return mastered
+
 class KannadaProsodyMapper:
     """
-    Translates statistical Delivery Prosody into Kannada phrase-level TTS parameters.
+    Translates statistical Delivery Prosody into Kannada phrase-level TTS parameters
+    with dynamic pitch excursion, high-energy presenter rhythm, and snappy breath pauses.
     """
 
     @classmethod
-    def segment_kannada_text(cls, text: str, target_aksharas: int = 12) -> List[Dict[str, Any]]:
+    def segment_kannada_text(cls, text: str, target_aksharas: int = 14) -> List[Dict[str, Any]]:
         """
         Segments Kannada text into breath-group phrases with contextual sentence-ending metadata.
         """
@@ -78,13 +149,13 @@ class KannadaProsodyMapper:
                 continue
 
             # Check if sentence is question, exclamation, or statement
-            is_question = "?" in punct or any(w in sent_text for w in ["ಯಾಕೆ", "ಹೇಗೆ", "ಏನು", "ಎಲ್ಲಿ", "ಯಾರು"])
+            is_question = "?" in punct or any(w in sent_text for w in ["ಯಾಕೆ", "ಹೇಗೆ", "ಏನು", "ಎಲ್ಲಿ", "ಯಾರು", "ಯಾವಾಗ", "ಎಷ್ಟು"])
             is_exclamation = "!" in punct
 
             # Split within sentence if longer than target_aksharas
             comma_parts = re.split(r'([,;:—–]+)', sent_text)
             curr_acc = ""
-            
+
             for part in comma_parts:
                 if not part.strip():
                     continue
@@ -133,47 +204,48 @@ class KannadaProsodyMapper:
         cls,
         phrase: Dict[str, Any],
         profile: Dict[str, Any],
-        base_voice: str
+        base_voice: str,
+        phrase_index: int = 0,
+        total_phrases: int = 1
     ) -> Tuple[str, str, int]:
         """
-        Maps reference prosody stats into safe, natural Edge-TTS pitch and rate tags.
-        Guarantees speaker identity is strictly preserved.
+        Maps reference prosody stats into expressive, dynamic Edge-TTS controls.
+        Applies dramatic pitch swings, fast presenter pacing, and crisp breath pauses.
         """
         rate_info = profile.get("speaking_rate", {})
-        pace_multiplier = rate_info.get("pace_multiplier", 1.25)
-        
-        # Safe Clamped Rate: [-10%, +30%]
-        rate_delta_raw = (pace_multiplier - 1.0) * 100.0
-        applied_rate_delta = int(np.clip(rate_delta_raw, -10.0, 30.0))
-        
-        # Pitch adjustments: Safe Clamped [-4Hz, +5Hz]
-        # Never alter base voice pitch beyond natural speech inflections
+        pace_multiplier = rate_info.get("pace_multiplier", 1.35)
+
+        # Base presenter rate: +28% to +38% for lively YouTube/Podcast tempo
+        base_rate = int(max(26.0, min(38.0, (pace_multiplier - 1.0) * 80.0 + 6.0)))
+
+        # Dynamic pitch variation based on phrase context
         if phrase.get("is_question"):
-            # Rising inflection for questions
-            phrase_pitch_hz = 3
-            # Slightly faster pace on questions
-            applied_rate_delta = min(30, applied_rate_delta + 4)
+            # Strong rising inflection for rhetorical questions (+18Hz to +22Hz)
+            phrase_pitch_hz = 18 if "gagan" in base_voice.lower() else 22
+            applied_rate = min(42, base_rate + 6)
+            pause_ms = 180
         elif phrase.get("is_exclamation"):
-            # High energy punch
-            phrase_pitch_hz = 2
-            applied_rate_delta = min(30, applied_rate_delta + 2)
+            # Energetic assertion / punch (+14Hz to +18Hz)
+            phrase_pitch_hz = 14 if "gagan" in base_voice.lower() else 18
+            applied_rate = min(40, base_rate + 4)
+            pause_ms = 190
         elif phrase.get("is_sentence_end"):
-            # Punchy falling termination (typical of energetic news/explainers)
-            ending_slope = profile.get("pitch_dynamics", {}).get("ending_slope", "falling_punchy")
-            phrase_pitch_hz = -3 if ending_slope == "falling_punchy" else 0
+            # Punchy falling termination (-10Hz to -14Hz)
+            phrase_pitch_hz = -12 if "gagan" in base_voice.lower() else -8
+            applied_rate = base_rate
+            pause_ms = 200
         else:
-            # Mid-sentence continuation
-            phrase_pitch_hz = 1
+            # Rhythmic alternating cadence across continuing clauses
+            if phrase_index % 2 == 0:
+                phrase_pitch_hz = 8 if "gagan" in base_voice.lower() else 10
+                applied_rate = base_rate + 3
+            else:
+                phrase_pitch_hz = -2 if "gagan" in base_voice.lower() else 0
+                applied_rate = base_rate - 2
+            pause_ms = 80
 
-        rate_str = f"+{applied_rate_delta}%" if applied_rate_delta >= 0 else f"{applied_rate_delta}%"
+        rate_str = f"+{applied_rate}%" if applied_rate >= 0 else f"{applied_rate}%"
         pitch_str = f"+{phrase_pitch_hz}Hz" if phrase_pitch_hz >= 0 else f"{phrase_pitch_hz}Hz"
-
-        # Pause duration calculation
-        pauses_info = profile.get("pauses", {})
-        if phrase.get("pause_type") == "long":
-            pause_ms = int(np.clip(pauses_info.get("p90_ms", 450.0) * 0.8, 300, 550))
-        else:
-            pause_ms = int(np.clip(pauses_info.get("median_ms", 150.0), 120, 220))
 
         return rate_str, pitch_str, pause_ms
 
@@ -186,7 +258,7 @@ class KannadaProsodyMapper:
     ) -> Tuple[bytes, Dict[str, Any]]:
         """
         Synthesizes Kannada text with expressive reference delivery while
-        strictly preserving the configured speaker identity (Gagan/Sapna).
+        strictly preserving 100% of the selected speaker identity (Gagan / Sapna).
         """
         import edge_tts
 
@@ -199,47 +271,12 @@ class KannadaProsodyMapper:
         # 2. Speaker Voice Identity (Gagan or Sapna)
         actual_voice = "kn-IN-GaganNeural" if ("gagan" in voice.lower() or "male" in voice.lower()) else "kn-IN-SapnaNeural"
 
-        # The built-in style must remain a single Edge utterance. Splitting a
-        # sentence into many tiny requests makes Edge add end-of-utterance
-        # silence to every word-sized fragment, which sounds like 2–3 s gaps.
-        if prosody_profile is None or prosody_profile.get("profile_id") == "builtin_expressive_v2":
-            import edge_tts
-
-            # Apply measured delivery to one complete utterance. The 45%
-            # reference pace multiplier is softened to Edge's natural range;
-            # splitting at every breath group would add artificial silence.
-            reference_rate = prosody_profile["speaking_rate"]["pace_multiplier"]
-            rate_delta = int(np.clip(round((reference_rate - 1.0) * 45), 0, 20))
-            rate = f"+{rate_delta}%"
-            # Keep each selected voice recognisable while transferring the
-            # reference's more animated contour and energetic delivery.
-            pitch = "-3Hz" if actual_voice == "kn-IN-GaganNeural" else "+2Hz"
-            communicate = edge_tts.Communicate(
-                text=norm_text,
-                voice=actual_voice,
-                pitch=pitch,
-                rate=rate,
-                volume="+3%",
-            )
-            audio_buffer = io.BytesIO()
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    audio_buffer.write(chunk["data"])
-            audio_bytes = audio_buffer.getvalue()
-            if not audio_bytes:
-                raise RuntimeError("No audio generated")
-            return audio_bytes, {
-                "voice_used": actual_voice,
-                "phrase_count": 1,
-                "applied_plan": [{"phrase": norm_text, "pitch": pitch, "rate": rate, "pause_after_ms": 0}],
-                "overall_pace": prosody_profile["speaking_rate"]["pace_syl_sec"],
-                "dynamic_punch": prosody_profile["energy_and_punch"]["energy_punch"],
-                "duration_sec": 0.0,
-            }
-
-        # 3. Target phrase length based on an uploaded reference breath-group
-        target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 12)
+        # 3. Target phrase length based on reference breath-group
+        target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 14)
         phrases = cls.segment_kannada_text(norm_text, target_aksharas=target_aksharas)
+
+        if not phrases:
+            phrases = [{"text": norm_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "punct": ".", "pause_type": "long"}]
 
         temp_dir = tempfile.mkdtemp(prefix="dhvani_delivery_")
         pcm_chunks = []
@@ -252,8 +289,10 @@ class KannadaProsodyMapper:
                 if not phrase_text:
                     continue
 
-                rate_str, pitch_str, pause_ms = cls.calculate_phrase_parameters(p_info, prosody_profile, actual_voice)
-                
+                rate_str, pitch_str, pause_ms = cls.calculate_phrase_parameters(
+                    p_info, prosody_profile, actual_voice, phrase_index=idx, total_phrases=len(phrases)
+                )
+
                 mp3_path = os.path.join(temp_dir, f"chunk_{idx:03d}.mp3")
                 wav_path = os.path.join(temp_dir, f"chunk_{idx:03d}.wav")
 
@@ -265,7 +304,7 @@ class KannadaProsodyMapper:
                 )
                 await communicate.save(mp3_path)
 
-                # Convert to PCM wav
+                # Convert to PCM wav using afconvert (macOS) or ffmpeg
                 if shutil.which("afconvert"):
                     subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@24000", "-c", "1", mp3_path, wav_path],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -275,13 +314,16 @@ class KannadaProsodyMapper:
 
                 with wave.open(wav_path, "rb") as wf:
                     raw = wf.readframes(wf.getnframes())
-                    data = np.frombuffer(raw, dtype=np.int16)
-                    pcm_chunks.append(data)
+                    data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
 
-                # Silence pause insertion
+                # Silence trimming on each phrase
+                trimmed_data = trim_silence_pcm(data, sr=sr, thresh_db=-38.0, pad_ms=15)
+                pcm_chunks.append(trimmed_data)
+
+                # Snappy breath pause insertion between phrases
                 if idx < len(phrases) - 1:
                     pause_samples = int((pause_ms / 1000.0) * sr)
-                    silence = np.zeros(pause_samples, dtype=np.int16)
+                    silence = np.zeros(pause_samples, dtype=np.float32)
                     pcm_chunks.append(silence)
 
                 applied_plan.append({
@@ -295,13 +337,12 @@ class KannadaProsodyMapper:
                 raise RuntimeError("No audio generated")
 
             # Combine all PCM chunks
-            combined_audio = np.concatenate(pcm_chunks).astype(np.float32) / 32768.0
+            combined_audio = np.concatenate(pcm_chunks)
 
-            # 4. Mastered Broadcast Levelling (Preserves Voice Identity, Adds Broadcast Punch)
-            energy_punch = prosody_profile.get("energy_and_punch", {}).get("energy_punch", 1.25)
-            mastered = np.tanh(combined_audio * min(1.4, max(1.0, energy_punch * 0.95)))
-            mastered = mastered / (np.max(np.abs(mastered)) + 1e-6) * 0.96
-            out_int16 = (mastered * 32767).astype(np.int16)
+            # 4. Broadcast Audio Mastering (EQ Presence Boost + Dynamic Punch Saturation + Peak Normalization)
+            energy_punch = prosody_profile.get("energy_and_punch", {}).get("energy_punch", 1.35)
+            mastered_audio = apply_broadcast_mastering(combined_audio, sr=sr, punch=energy_punch)
+            out_int16 = (mastered_audio * 32767).astype(np.int16)
 
             # Export combined audio as standard WAV
             out_wav_path = os.path.join(temp_dir, "combined.wav")
@@ -328,7 +369,7 @@ class KannadaProsodyMapper:
                 "voice_used": actual_voice,
                 "phrase_count": len(phrases),
                 "applied_plan": applied_plan,
-                "overall_pace": prosody_profile.get("speaking_rate", {}).get("pace_syl_sec", 6.65),
+                "overall_pace": prosody_profile.get("speaking_rate", {}).get("pace_syl_sec", 8.5),
                 "dynamic_punch": round(energy_punch, 2),
                 "duration_sec": round(len(out_int16) / sr, 2)
             }

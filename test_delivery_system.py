@@ -3,7 +3,7 @@
 Automated Test Suite for Delivery Prosody System
 Tests:
 1. DeliveryProfiler statistical extraction & caching
-2. KannadaProsodyMapper akshara segmentation & parameter clamping
+2. KannadaProsodyMapper akshara segmentation & dynamic parameter mapping
 3. End-to-end audio synthesis in Normal vs Delivery Style Transfer mode
 """
 
@@ -13,7 +13,7 @@ import json
 import time
 import asyncio
 from delivery_profiler import DeliveryProfiler
-from prosody_mapper import KannadaProsodyMapper, count_aksharas
+from prosody_mapper import KannadaProsodyMapper, count_aksharas, BUILTIN_EXPRESSIVE_PROFILE
 from kannada_normalizer import KannadaNormalizer
 
 async def main():
@@ -58,23 +58,26 @@ async def main():
     print(f"  - Akshara count for '{sample_sentence[:30]}...': {aksharas} aksharas")
     assert aksharas > 10, "Akshara count failed"
 
-    phrases = KannadaProsodyMapper.segment_kannada_text(sample_sentence, target_aksharas=10)
+    phrases = KannadaProsodyMapper.segment_kannada_text(sample_sentence, target_aksharas=14)
     print(f"✓ Segmented into {len(phrases)} contextual breath phrases:")
     for idx, p in enumerate(phrases, 1):
-        print(f"    {idx}. \"{p['text']}\" (is_question={p['is_question']}, is_end={p['is_sentence_end']}, pause={p['pause_type']})")
+        print(f"    {idx}. \"{p['text']}\" (is_question={p['is_question']}, is_exclamation={p['is_exclamation']}, is_end={p['is_sentence_end']}, pause={p['pause_type']})")
 
     # -------------------------------------------------------------
-    # 3. Test Parameter Clamping
+    # 3. Test Parameter Dynamics
     # -------------------------------------------------------------
-    print("\n[Test 3] Testing Safe Parameter Clamping (Identity Preservation)...")
-    for p in phrases:
-        rate_str, pitch_str, pause_ms = KannadaProsodyMapper.calculate_phrase_parameters(p, profile1, "kn-IN-GaganNeural")
+    print("\n[Test 3] Testing Dynamic Parameter Excursions & Contours...")
+    for idx, p in enumerate(phrases):
+        rate_str, pitch_str, pause_ms = KannadaProsodyMapper.calculate_phrase_parameters(
+            p, profile1, "kn-IN-GaganNeural", phrase_index=idx, total_phrases=len(phrases)
+        )
         rate_val = int(rate_str.replace('%', ''))
         pitch_val = int(pitch_str.replace('Hz', ''))
-        assert -10 <= rate_val <= 30, f"Rate out of safe bounds: {rate_val}"
-        assert -4 <= pitch_val <= 5, f"Pitch out of safe bounds: {pitch_val}"
-        assert 120 <= pause_ms <= 550, f"Pause out of safe bounds: {pause_ms}"
-    print("✓ All rate, pitch, and pause parameters clamped safely within natural limits.")
+        assert -10 <= rate_val <= 45, f"Rate out of bounds: {rate_val}"
+        assert -20 <= pitch_val <= 30, f"Pitch out of bounds: {pitch_val}"
+        assert 50 <= pause_ms <= 300, f"Pause out of bounds: {pause_ms}"
+        print(f"    Phrase {idx+1}: Rate={rate_str}, Pitch={pitch_str}, Pause={pause_ms}ms")
+    print("✓ All rate, pitch, and pause parameters successfully mapped with expressive dynamics.")
 
     # -------------------------------------------------------------
     # 4. End-to-End Synthesis: Normal vs Delivery Styled
@@ -89,7 +92,7 @@ async def main():
         voice="kn-IN-GaganNeural",
         prosody_profile=profile1
     )
-    styled_path = "results/tests/test_styled_gagan.mp3"
+    styled_path = "results/tests/test_styled_gagan.wav"
     with open(styled_path, "wb") as f:
         f.write(styled_audio)
     print(f"✓ Styled Synthesis completed in {time.time()-t0:.2f}s -> {styled_path} ({len(styled_audio)/1024:.1f} KB, duration {meta['duration_sec']}s)")

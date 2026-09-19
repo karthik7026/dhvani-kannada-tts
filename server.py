@@ -272,11 +272,13 @@ async def synthesize_delivery_endpoint(
             "duration": meta.get("duration_sec", 0.0)
         })
 
+        media_type = "audio/wav" if audio_bytes.startswith(b"RIFF") else "audio/mpeg"
+        filename = "dhvani_delivery_styled.wav" if audio_bytes.startswith(b"RIFF") else "dhvani_delivery_styled.mp3"
         return Response(
             content=audio_bytes,
-            media_type="audio/mpeg",
+            media_type=media_type,
             headers={
-                "Content-Disposition": "attachment; filename=dhvani_delivery_styled.mp3",
+                "Content-Disposition": f"attachment; filename={filename}",
                 "X-Delivery-Meta": json.dumps({
                     "voice": meta.get("voice_used"),
                     "duration": meta.get("duration_sec"),
