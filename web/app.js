@@ -62,6 +62,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const copyTextBtn = document.getElementById("copyTextBtn");
     const normalizedPreview = document.getElementById("normalizedPreview");
 
+    // Primary CTA Buttons & Quick Actions
+    const primarySynthesizeBtn = document.getElementById("primarySynthesizeBtn");
+    const primaryCtaPlayIcon = document.getElementById("primaryCtaPlayIcon");
+    const primaryCtaPauseIcon = document.getElementById("primaryCtaPauseIcon");
+    const primaryCtaText = document.getElementById("primaryCtaText");
+    const randomSampleBtn = document.getElementById("randomSampleBtn");
+    const downloadPrimaryBtn = document.getElementById("downloadPrimaryBtn");
+    const standardPlayCtaBtn = document.getElementById("standardPlayCtaBtn");
+    const voicePresetChips = document.querySelectorAll("#voicePresetChips .voice-preset-chip");
+
+    // Pronunciation Inspector & 3-Stage Debug Elements
+    const pronunciationDebugAccordion = document.getElementById("pronunciationDebugAccordion");
+    const debugRulesCountBadge = document.getElementById("debugRulesCountBadge");
+    const debugDisplayText = document.getElementById("debugDisplayText");
+    const debugNormalizedText = document.getElementById("debugNormalizedText");
+    const debugSpeechText = document.getElementById("debugSpeechText");
+    const transformsList = document.getElementById("transformsList");
+    const openDictFromDebugBtn = document.getElementById("openDictFromDebugBtn");
+    const openDictBtn = document.getElementById("openDictBtn");
+
+    // Dictionary Modal Elements
+    const dictModal = document.getElementById("dictModal");
+    const closeDictModalBtn = document.getElementById("closeDictModalBtn");
+    const addDictForm = document.getElementById("addDictForm");
+    const dictNewKey = document.getElementById("dictNewKey");
+    const dictNewValue = document.getElementById("dictNewValue");
+    const dictNewType = document.getElementById("dictNewType");
+    const addDictEntryBtn = document.getElementById("addDictEntryBtn");
+    const dictTabWords = document.getElementById("dictTabWords");
+    const dictTabAcronyms = document.getElementById("dictTabAcronyms");
+    const dictWordsCountBadge = document.getElementById("dictWordsCountBadge");
+    const dictAcronymsCountBadge = document.getElementById("dictAcronymsCountBadge");
+    const dictSearchInput = document.getElementById("dictSearchInput");
+    const dictEntriesList = document.getElementById("dictEntriesList");
+    const dictTotalMeta = document.getElementById("dictTotalMeta");
+
     // Standard Mode Elements
     const voiceCards = document.querySelectorAll(".voice-card");
     const pitchSlider = document.getElementById("pitchSlider");
@@ -197,24 +233,65 @@ document.addEventListener("DOMContentLoaded", () => {
         window._phraseTimeout = setTimeout(updateLivePhraseBreakdown, 200);
     }
 
+    function escapeHtml(str) {
+        if (!str) return "";
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
     async function fetchNormalization() {
         const text = kannadaInput.value;
         if (!text.trim()) {
-            normalizedPreview.textContent = "(ಖಾಲಿ)";
+            if (normalizedPreview) normalizedPreview.textContent = "(ಖಾಲಿ)";
+            if (debugDisplayText) debugDisplayText.textContent = "(ಖಾಲಿ)";
+            if (debugNormalizedText) debugNormalizedText.textContent = "(ಖಾಲಿ)";
+            if (debugSpeechText) debugSpeechText.textContent = "(ಖಾಲಿ)";
+            if (debugRulesCountBadge) debugRulesCountBadge.textContent = "0 ನಿಯಮಗಳು";
+            if (transformsList) {
+                transformsList.innerHTML = `<span class="empty-rules-hint">ಯಾವುದೇ ವಿಶೇಷ ನಿಯಮದ ಅಗತ್ಯವಿಲ್ಲ (ಶುದ್ಧ ಕನ್ನಡ ಪದಗಳು)</span>`;
+            }
             return;
         }
+
         try {
-            const res = await fetch(apiUrl("/api/normalize"), {
+            const res = await fetch(apiUrl("/api/pronunciation_debug"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text })
             });
+
             if (res.ok) {
                 const data = await res.json();
-                normalizedPreview.textContent = data.normalized_text;
+                if (normalizedPreview) normalizedPreview.textContent = data.normalized_text;
+                if (debugDisplayText) debugDisplayText.textContent = data.display_text;
+                if (debugNormalizedText) debugNormalizedText.textContent = data.normalized_text;
+                if (debugSpeechText) debugSpeechText.textContent = data.speech_text;
+
+                const transforms = data.transformations || data.applied_transforms || [];
+                if (debugRulesCountBadge) {
+                    debugRulesCountBadge.textContent = `${transforms.length} ನಿಯಮಗಳು`;
+                }
+
+                if (transformsList) {
+                    if (transforms.length > 0) {
+                        transformsList.innerHTML = transforms.map(t => `
+                            <div class="transform-chip">
+                                <span class="transform-orig">${escapeHtml(t.original)}</span>
+                                <span class="transform-arrow">➔</span>
+                                <span class="transform-spoken">${escapeHtml(t.replacement || t.spoken)}</span>
+                            </div>
+                        `).join("");
+                    } else {
+                        transformsList.innerHTML = `<span class="empty-rules-hint">ಯಾವುದೇ ವಿಶೇಷ ನಿಯಮದ ಅಗತ್ಯವಿಲ್ಲ (ಶುದ್ಧ ಕನ್ನಡ ಪದಗಳು)</span>`;
+                    }
+                }
             }
         } catch (e) {
-            normalizedPreview.textContent = text;
+            if (normalizedPreview) normalizedPreview.textContent = text;
+            if (debugDisplayText) debugDisplayText.textContent = text;
+            if (debugNormalizedText) debugNormalizedText.textContent = text;
+            if (debugSpeechText) debugSpeechText.textContent = text;
         }
     }
 
@@ -355,7 +432,8 @@ document.addEventListener("DOMContentLoaded", () => {
             activeVoiceInfo.textContent = `${vName} • ⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (Expressive Voice)`;
         } else {
             const activeCard = document.querySelector(".voice-card.active");
-            const voiceName = customName || (activeCard ? activeCard.querySelector(".voice-name").textContent : "Gagan");
+            const nameEl = activeCard ? (activeCard.querySelector(".voice-title") || activeCard.querySelector(".voice-name")) : null;
+            const voiceName = customName || (nameEl ? nameEl.textContent.split('(')[0].trim() : "Gagan");
             activeVoiceInfo.textContent = `${voiceName} • ${state.pitch}Hz • ${state.rate.toFixed(2)}x`;
         }
     }
@@ -762,10 +840,75 @@ document.addEventListener("DOMContentLoaded", () => {
         pauseIcon.classList.toggle("hidden", !state.isPlaying);
         loadingSpinner.classList.toggle("hidden", !state.isLoading);
 
+        if (primaryCtaPlayIcon && primaryCtaPauseIcon) {
+            primaryCtaPlayIcon.classList.toggle("hidden", state.isPlaying);
+            primaryCtaPauseIcon.classList.toggle("hidden", !state.isPlaying);
+        }
+
+        if (primaryCtaText) {
+            if (status === "playing") primaryCtaText.textContent = "⏸️ ವಿರಾಮಗೊಳಿಸಿ (Pause)";
+            else if (status === "paused") primaryCtaText.textContent = "▶️ ಮುಂದುವರಿಸಿ (Resume)";
+            else if (status === "loading") primaryCtaText.textContent = "⏳ ಧ್ವನಿ ತಯಾರಾಗುತ್ತಿದೆ...";
+            else primaryCtaText.textContent = "🎙️ ಧ್ವನಿ ರಚಿಸಿ & ನುಡಿಸಿ (Generate & Play)";
+        }
+
         if (status === "playing") statusText.textContent = "ನುಡಿಸಲಾಗುತ್ತಿದೆ (Playing)";
         else if (status === "paused") statusText.textContent = "ವಿರಾಮಗೊಳಿಸಲಾಗಿದೆ (Paused)";
         else if (status === "loading") statusText.textContent = "ಧ್ವನಿ ತಯಾರಾಗುತ್ತಿದೆ...";
         else statusText.textContent = "ಸಿದ್ಧವಾಗಿದೆ (Ready)";
+    }
+
+    // Connect Primary CTA Buttons
+    if (primarySynthesizeBtn) {
+        primarySynthesizeBtn.addEventListener("click", () => playBtn.click());
+    }
+
+    if (standardPlayCtaBtn) {
+        standardPlayCtaBtn.addEventListener("click", () => synthesizeStandardTTS());
+    }
+
+    if (downloadPrimaryBtn) {
+        downloadPrimaryBtn.addEventListener("click", () => downloadBtn.click());
+    }
+
+    const SAMPLE_TEXTS = [
+        "ನಾವು ₹1000 ಡಿಜಿಟಲ್ ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ, ವ್ಯಾಪಾರಿ 1% MDR ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ. ದಿನಾಂಕ 15/08/1947 ರಂದು ಮಧ್ಯಾಹ್ನ 3:30 PM ಕ್ಕೆ ಆರಂಭವಾದ ಈ ಪದ್ಧತಿಯು ಇಂದು YouTube ಮತ್ತು ChatGPT ನಂತಹ AI ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ.",
+        "ಎಸ್‌ಸಿಒ ಸಮ್ಮೇಳನದಲ್ಲಿ ಭಾರತದ ಪಾತ್ರ ಅತ್ಯಂತ ಪ್ರಮುಖವಾಗಿದೆ. ಜಾಗತಿಕ ದಕ್ಷಿಣದ ದೇಶಗಳಿಗೆ ಭಾರತ ನೀಡಿದ ೧೦ ಅಂಶಗಳ ಕಾರ್ಯಸೂಚಿ ಇಡೀ ವಿಶ್ವದ ಗಮನ ಸೆಳೆದಿದೆ. ದೇಶದ ರಾಷ್ಟ್ರೀಯ ಭದ್ರತೆ ಮತ್ತು ಆರ್ಥಿಕ ಶಕ್ತಿ ಎರಡೂ ಅಷ್ಟೇ ಮುಖ್ಯ.",
+        "ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯಿಂದ ₹೨,೫೦೦ ಕಡಿತಗೊಂಡಿದೆ. ನಿಮ್ಮ ಯುಪಿಐ ವಹಿವಾಟು ಯಶಸ್ವಿಯಾಗಿದೆ. ಯಾವುದೇ ಸಂದರ್ಭದಲ್ಲೂ ಒಟಿಪಿ ಸಂಖ್ಯೆಯನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ.",
+        "ಶುಭೋದಯ! ಧ್ವನಿ ಕನ್ನಡ ಆಡಿಯೊ ಸ್ಟುಡಿಯೋಗೆ ನಿಮಗೆ ಹೃತ್ಪೂರ್ವಕ ಸ್ವಾಗತ. ಇಂದು ನಿಮ್ಮ ದಿನವು ಸುಖ, ಶಾಂತಿ ಮತ್ತು ಸಂತೋಷದಿಂದ ಕೂಡಿರಲಿ.",
+        "ಹೆಸರಾಯಿತು ಕರ್ನಾಟಕ, ಉಸಿರಾಗಲಿ ಕನ್ನಡ. ಸಿರಿಗನ್ನಡಂ ಗೆಲ್ಗೆ, ಸಿರಿಗನ್ನಡಂ ಬಾಳ್ಗೆ! ಎಲ್ಲಾದರು ಇರು ಎಂತಾದರು ಇರು ಎಂದೆಂದಿಗೂ ನೀ ಕನ್ನಡವಾಗಿರು."
+    ];
+
+    if (randomSampleBtn) {
+        randomSampleBtn.addEventListener("click", () => {
+            const randomText = SAMPLE_TEXTS[Math.floor(Math.random() * SAMPLE_TEXTS.length)];
+            kannadaInput.value = randomText;
+            updateTextMetrics();
+            showToast("🎲 ಯಾದೃಚ್ಛಿಕ ಮಾದರಿ ಪಠ್ಯ ಲೋಡ್ ಆಗಿದೆ!");
+        });
+    }
+
+    // Voice Preset Chips
+    if (voicePresetChips && voicePresetChips.length > 0) {
+        voicePresetChips.forEach(chip => {
+            chip.addEventListener("click", () => {
+                voicePresetChips.forEach(c => c.classList.remove("active"));
+                chip.classList.add("active");
+                const pitch = parseInt(chip.dataset.pitch || "0");
+                const rate = parseFloat(chip.dataset.rate || "1.0");
+                state.pitch = pitch;
+                state.rate = rate;
+                if (pitchSlider) {
+                    pitchSlider.value = pitch;
+                    pitchValue.textContent = `${pitch >= 0 ? '+' : ''}${pitch} Hz`;
+                }
+                if (rateSlider) {
+                    rateSlider.value = rate;
+                    rateValue.textContent = `${rate.toFixed(2)}x`;
+                }
+                showToast(`ಶೈಲಿ ಅನ್ವಯಿಸಲಾಗಿದೆ: ${chip.textContent.trim()}`);
+            });
+        });
     }
 
     audioPlayer.addEventListener("timeupdate", () => {
@@ -911,6 +1054,165 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target === presetsModal) presetsModal.classList.add("hidden");
     });
 
+    // ==========================================
+    // 9. PRONUNCIATION DICTIONARY CONTROLLER
+    // ==========================================
+    let currentDictTab = "words";
+    let cachedDictData = { words: {}, acronyms: {} };
+
+    async function loadDictionary() {
+        try {
+            const res = await fetch(apiUrl("/api/dictionary"));
+            if (res.ok) {
+                cachedDictData = await res.json();
+                if (dictWordsCountBadge) dictWordsCountBadge.textContent = cachedDictData.total_words || 0;
+                if (dictAcronymsCountBadge) dictAcronymsCountBadge.textContent = cachedDictData.total_acronyms || 0;
+                renderDictionaryList();
+            }
+        } catch (e) {
+            console.warn("Failed to load pronunciation dictionary", e);
+        }
+    }
+
+    function renderDictionaryList() {
+        if (!dictEntriesList) return;
+        dictEntriesList.innerHTML = "";
+        const query = (dictSearchInput ? dictSearchInput.value : "").trim().toLowerCase();
+        const sourceObj = currentDictTab === "words" ? (cachedDictData.words || {}) : (cachedDictData.acronyms || {});
+        const entries = Object.entries(sourceObj);
+
+        const filtered = entries.filter(([k, v]) => {
+            if (!query) return true;
+            return k.toLowerCase().includes(query) || v.toLowerCase().includes(query);
+        });
+
+        if (dictTotalMeta) {
+            dictTotalMeta.textContent = `ಒಟ್ಟು ${entries.length} ನಮೂದುಗಳು (${filtered.length} ಪ್ರದರ್ಶಿಸಲಾಗುತ್ತಿದೆ)`;
+        }
+
+        if (filtered.length === 0) {
+            dictEntriesList.innerHTML = `<div class="dict-empty-view">ಯಾವುದೇ ನಮೂದುಗಳು ಕಂಡುಬಂದಿಲ್ಲ (No entries found)</div>`;
+            return;
+        }
+
+        // Sort alphabetically
+        filtered.sort((a, b) => a[0].localeCompare(b[0]));
+
+        filtered.forEach(([k, v]) => {
+            const card = document.createElement("div");
+            card.className = "dict-entry-card";
+            card.innerHTML = `
+                <div class="dict-entry-main">
+                    <span class="dict-entry-key">${escapeHtml(k)}</span>
+                    <span class="dict-entry-val">${escapeHtml(v)}</span>
+                </div>
+                <div class="dict-entry-actions">
+                    <span class="tab-count-badge">${currentDictTab === 'words' ? 'ಪದ' : 'ಸಂಕ್ಷೇಪಣ'}</span>
+                    <button class="dict-delete-btn" title="ತೆಗೆದುಹಾಕಿ (Delete)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
+            `;
+
+            const delBtn = card.querySelector(".dict-delete-btn");
+            delBtn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (!confirm(`"${k}" ನಮೂದನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿದ್ದೀರಾ?`)) return;
+                try {
+                    const res = await fetch(apiUrl(`/api/dictionary/entry?key=${encodeURIComponent(k)}&type=${currentDictTab === 'words' ? 'word' : 'acronym'}`), {
+                        method: "DELETE"
+                    });
+                    if (res.ok) {
+                        showToast(`"${k}" ನಿಘಂಟಿನಿಂದ ತೆಗೆದುಹಾಕಲಾಗಿದೆ`);
+                        await loadDictionary();
+                        fetchNormalization();
+                    } else {
+                        const err = await res.json();
+                        showToast(`ದೋಷ: ${err.detail || 'ಅಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ'}`);
+                    }
+                } catch (err) {
+                    showToast(`ದೋಷ: ${err.message}`);
+                }
+            });
+
+            dictEntriesList.appendChild(card);
+        });
+    }
+
+    if (dictTabWords) {
+        dictTabWords.addEventListener("click", () => {
+            currentDictTab = "words";
+            dictTabWords.classList.add("active");
+            if (dictTabAcronyms) dictTabAcronyms.classList.remove("active");
+            renderDictionaryList();
+        });
+    }
+
+    if (dictTabAcronyms) {
+        dictTabAcronyms.addEventListener("click", () => {
+            currentDictTab = "acronyms";
+            dictTabAcronyms.classList.add("active");
+            if (dictTabWords) dictTabWords.classList.remove("active");
+            renderDictionaryList();
+        });
+    }
+
+    if (dictSearchInput) {
+        dictSearchInput.addEventListener("input", renderDictionaryList);
+    }
+
+    if (addDictEntryBtn) {
+        addDictEntryBtn.addEventListener("click", async () => {
+            const key = dictNewKey.value.trim();
+            const value = dictNewValue.value.trim();
+            const type = dictNewType.value;
+
+            if (!key || !value) {
+                showToast("ದಯವಿಟ್ಟು ಪದ ಮತ್ತು ಕನ್ನಡ ಉಚ್ಚಾರಣೆ ಎರಡನ್ನೂ ನಮೂದಿಸಿ");
+                return;
+            }
+
+            try {
+                const res = await fetch(apiUrl("/api/dictionary/entry"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ key, value, type })
+                });
+
+                if (res.ok) {
+                    dictNewKey.value = "";
+                    dictNewValue.value = "";
+                    showToast(`"${key}" ನಿಘಂಟಿಗೆ ಸೇರಿಸಲಾಗಿದೆ!`);
+                    await loadDictionary();
+                    fetchNormalization();
+                } else {
+                    const err = await res.json();
+                    showToast(`ದೋಷ: ${err.detail || 'ಉಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ'}`);
+                }
+            } catch (err) {
+                showToast(`ದೋಷ: ${err.message}`);
+            }
+        });
+    }
+
+    function openDictionaryModal() {
+        loadDictionary();
+        if (dictModal) dictModal.classList.remove("hidden");
+    }
+
+    function closeDictionaryModal() {
+        if (dictModal) dictModal.classList.add("hidden");
+    }
+
+    if (openDictBtn) openDictBtn.addEventListener("click", openDictionaryModal);
+    if (openDictFromDebugBtn) openDictFromDebugBtn.addEventListener("click", openDictionaryModal);
+    if (closeDictModalBtn) closeDictModalBtn.addEventListener("click", closeDictionaryModal);
+    if (dictModal) {
+        dictModal.addEventListener("click", (e) => {
+            if (e.target === dictModal) closeDictionaryModal();
+        });
+    }
+
     // Theme Switcher
     themeToggleBtn.addEventListener("click", () => {
         state.theme = state.theme === "dark" ? "light" : "dark";
@@ -927,9 +1229,10 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             openPresetsBtn.click();
         } else if (e.key === "Escape") {
-            presetsModal.classList.add("hidden");
-            historyDrawer.classList.add("hidden");
-            stopBtn.click();
+            if (presetsModal) presetsModal.classList.add("hidden");
+            if (historyDrawer) historyDrawer.classList.add("hidden");
+            if (dictModal) dictModal.classList.add("hidden");
+            if (stopBtn) stopBtn.click();
         }
     });
 
@@ -947,4 +1250,5 @@ document.addEventListener("DOMContentLoaded", () => {
     updateStatusMeta();
     updateLivePhraseBreakdown();
     fetchIndicF5Status();
+    loadDictionary();
 });

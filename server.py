@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Dhvani Kannada Text-to-Speech & Voice Delivery Studio Server (ಧ್ವನಿ ಕನ್ನಡ ವೆಬ್ ಸ್ಟುಡಿಯೋ)
-FastAPI Backend delivering high-fidelity Kannada neural synthesis, delivery/prosody style transfer, text normalization, and audio mastering.
+Dhvani Kannada Text-to-Speech & Voice Delivery Studio Server (ಧ್ವನಿ ಕನ್ನಡ ವೆಬ್ ಸ್ಟುಡಿಯೋ) v3.0
+FastAPI Backend delivering high-fidelity Kannada neural synthesis, delivery/prosody style transfer,
+configurable pronunciation dictionary, text normalization, and broadcast mastering.
 """
 
 import os
@@ -16,14 +17,15 @@ import asyncio
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body, Header
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body, Header, Query
 from fastapi.responses import Response, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import httpx
 
-from kannada_normalizer import KannadaNormalizer, normalize_kannada_text
+from pronunciation_engine import KannadaPronunciationEngine, normalize_kannada_text
+from kannada_normalizer import KannadaNormalizer
 from voice_cloner import AcousticVoiceCloner
 from delivery_profiler import DeliveryProfiler
 from prosody_mapper import KannadaProsodyMapper
@@ -31,8 +33,8 @@ from indic_f5_engine import IndicF5Engine
 
 app = FastAPI(
     title="Dhvani Kannada TTS Studio API",
-    description="High-Fidelity Kannada Neural Text-to-Speech & Reference Delivery Style Studio",
-    version="2.1.0"
+    description="High-Fidelity Kannada Neural Text-to-Speech & Reference Delivery Style Studio with Pronunciation Optimization",
+    version="3.0.0"
 )
 
 app.add_middleware(
@@ -131,6 +133,29 @@ PRESETS_DATA = [
         ]
     },
     {
+        "category": "ವಾಣಿಜ್ಯ, ಡಿಜಿಟಲ್ ಪಾವತಿ & ತಂತ್ರಜ್ಞಾನ (FinTech & Tech)",
+        "samples": [
+            {
+                "title": "ಡಿಜಿಟಲ್ ಪಾವತಿ & MDR (Digital Payment & MDR)",
+                "text": "ನಮ್ಮ ದೇಶದಲ್ಲಿ UPI ಮೂಲಕ digital payment ಕ್ರಾಂತಿ ಸೃಷ್ಟಿಯಾಗಿದೆ. ಸಣ್ಣ ವ್ಯಾಪಾರಿಗಳಿಗೆ MDR ಶೇಕಡಾ 1% ಗಿಂತ ಕಡಿಮೆ ಇರಲಿದ್ದು, ₹1000 ಖರೀದಿಗೆ ₹10 ಕ್ಯಾಶ್‌ಬ್ಯಾಕ್ ಸಿಗಲಿದೆ.",
+                "voiceId": "podcast-narrator",
+                "energy": "high"
+            },
+            {
+                "title": "ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ & API (AI & APIs)",
+                "text": "YouTube ಮತ್ತು ChatGPT ನಲ್ಲಿ AI ತಂತ್ರಜ್ಞಾನದ ಬಗ್ಗೆ ಮಾಹಿತಿ ಲಭ್ಯವಿದೆ. ನೂತನ TTS API ಬಳಸಿ ಸುಲಭವಾಗಿ ಕನ್ನಡ ಆಡಿಯೋ ರಚಿಸಬಹುದು.",
+                "voiceId": "podcast-narrator",
+                "energy": "high"
+            },
+            {
+                "title": "ಬ್ಯಾಂಕಿಂಗ್ ಒಟಿಪಿ ಸಂದೇಶ (Banking Security)",
+                "text": "ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯಿಂದ ₹೨,೫೦೦ ಕಡಿತಗೊಂಡಿದೆ. ನಿಮ್ಮ ಯುಪಿಐ ವಹಿವಾಟು ಯಶಸ್ವಿಯಾಗಿದೆ. ಯಾವುದೇ ಸಂದರ್ಭದಲ್ಲೂ ಒಟಿಪಿ ಸಂಖ್ಯೆಯನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ.",
+                "voiceId": "kn-IN-GaganNeural",
+                "energy": "standard"
+            }
+        ]
+    },
+    {
         "category": "ದೈನಂದಿನ ಸಂಭಾಷಣೆ & ಶುಭಾಶಯಗಳು (Daily & Greetings)",
         "samples": [
             {
@@ -163,23 +188,6 @@ PRESETS_DATA = [
                 "energy": "standard"
             }
         ]
-    },
-    {
-        "category": "ವಾಣಿಜ್ಯ, ಸಂಖ್ಯೆ & ಬ್ಯಾಂಕಿಂಗ್ (Finance & Tech)",
-        "samples": [
-            {
-                "title": "ವ್ಯಾಪಾರ ಮತ್ತು ರಿಯಾಯಿತಿ (Offer & Discount)",
-                "text": "ನಮ್ಮ ನೂತನ ಮಳಿಗೆಯಲ್ಲಿ ಒಟ್ಟು ೧೨೫೦ ಕ್ಕೂ ಹೆಚ್ಚು ಉತ್ಪನ್ನಗಳು ಲಭ್ಯವಿವೆ. ₹೪೫೦ ಮೌಲ್ಯದ ಖರೀದಿಗೆ ಶೇಕಡಾ ೨೦% ರಿಯಾಯಿತಿ ಸಿಗಲಿದೆ.",
-                "voiceId": "kn-IN-SapnaNeural",
-                "energy": "high"
-            },
-            {
-                "title": "ಬ್ಯಾಂಕಿಂಗ್ ಒಟಿಪಿ ಸಂದೇಶ (Banking Security)",
-                "text": "ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯಿಂದ ₹೨,೫೦೦ ಕಡಿತಗೊಂಡಿದೆ. ನಿಮ್ಮ ಯುಪಿಐ ವಹಿವಾಟು ಯಶಸ್ವಿಯಾಗಿದೆ. ಯಾವುದೇ ಸಂದರ್ಭದಲ್ಲೂ ಒಟಿಪಿ ಸಂಖ್ಯೆಯನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ.",
-                "voiceId": "kn-IN-GaganNeural",
-                "energy": "standard"
-            }
-        ]
     }
 ]
 
@@ -189,7 +197,7 @@ PRESETS_DATA = [
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "service": "Dhvani Kannada TTS Studio", "version": "2.1.0"}
+    return {"status": "ok", "service": "Dhvani Kannada TTS Studio", "version": "3.0.0"}
 
 @app.get("/api/voices")
 def get_voices():
@@ -199,15 +207,73 @@ def get_voices():
 def get_presets():
     return {"categories": PRESETS_DATA}
 
-@app.post("/api/normalize")
-def normalize_endpoint(payload: dict = Body(...)):
-    text = payload.get("text", "")
-    normalized = KannadaNormalizer.normalize(text)
-    return {"original_text": text, "normalized_text": normalized}
-
 @app.get("/api/history")
 def get_history():
     return {"history": SYNTHESIS_HISTORY[-20:][::-1]}
+
+# -------------------------------------------------------------
+# PRONUNCIATION & NORMALIZATION ENDPOINTS
+# -------------------------------------------------------------
+
+@app.post("/api/normalize")
+def normalize_endpoint(payload: dict = Body(...)):
+    """Normalizes input text and returns full pronunciation debug breakdown."""
+    text = payload.get("text", "")
+    debug_info = KannadaPronunciationEngine.get_debug_breakdown(text)
+    return debug_info
+
+@app.post("/api/pronunciation_debug")
+def pronunciation_debug_endpoint(payload: dict = Body(...)):
+    """
+    3-Stage Pronunciation Debug Mode:
+    - Original text (display_text)
+    - Normalized intermediate text
+    - Final speech text (sent to Edge-TTS)
+    - Transformation audit logs
+    """
+    text = payload.get("text", "")
+    return KannadaPronunciationEngine.get_debug_breakdown(text)
+
+@app.get("/api/dictionary")
+def get_dictionary_endpoint():
+    """Returns the user-configurable pronunciation dictionary."""
+    return KannadaPronunciationEngine.load_dictionary()
+
+@app.post("/api/dictionary")
+def update_dictionary_endpoint(payload: dict = Body(...)):
+    """Updates the user pronunciation dictionary and hot-reloads it in memory."""
+    success = KannadaPronunciationEngine.save_dictionary(payload)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to save dictionary")
+    return {"status": "success", "dictionary": KannadaPronunciationEngine.load_dictionary()}
+
+@app.post("/api/dictionary/entry")
+def add_dictionary_entry_endpoint(payload: dict = Body(...)):
+    """Adds or updates a single word/acronym entry in the dictionary."""
+    category = payload.get("category") or payload.get("type", "words")
+    key = payload.get("key", "").strip()
+    value = payload.get("value", "").strip()
+
+    if not key or not value:
+        raise HTTPException(status_code=400, detail="Key and value cannot be empty")
+
+    success = KannadaPronunciationEngine.add_dictionary_entry(key, value, category)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to save dictionary entry")
+    return {"status": "success", "added": {key: value}, "category": category}
+
+@app.delete("/api/dictionary/entry")
+def delete_dictionary_entry_endpoint(
+    category: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),
+    key: str = Query(...)
+):
+    """Deletes an entry from words or acronyms."""
+    cat = category or type or "words"
+    success = KannadaPronunciationEngine.remove_dictionary_entry(key, cat)
+    if success:
+        return {"status": "deleted", "key": key, "category": cat}
+    raise HTTPException(status_code=404, detail="Entry not found")
 
 # -------------------------------------------------------------
 # DELIVERY PROSODY STYLE TRANSFER ENDPOINTS
@@ -215,29 +281,18 @@ def get_history():
 
 @app.post("/api/analyze_delivery")
 async def analyze_delivery_endpoint(reference_audio: UploadFile = File(...)):
-    """
-    Extracts language-agnostic Delivery Prosody statistics from reference audio:
-    - Pitch dynamics (median, range, ending slope)
-    - Speaking rate (syl/sec, multiplier)
-    - Pause distributions (short, medium, long)
-    - Energy punch & crest factor
-    - Breath-group phrasing length
-    """
+    """Extracts language-agnostic Delivery Prosody statistics from reference audio."""
     audio_bytes = await reference_audio.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty reference audio")
     
-    # Analyze a clean representative sample (up to 60s)
     profile = DeliveryProfiler.extract_prosody_profile(audio_bytes, max_duration_sec=60.0)
     profile["filename"] = reference_audio.filename
     return profile
 
 @app.post("/api/preview_prosody_plan")
 def preview_prosody_plan_endpoint(payload: dict = Body(...)):
-    """
-    Returns real-time phrase segmentation, pitch inflections, burst rates,
-    and pause timings for live UI visualization.
-    """
+    """Returns real-time phrase segmentation with pronunciation-optimized speech text."""
     text = payload.get("text", "").strip()
     voice = payload.get("voice", "kn-IN-GaganNeural")
     energy_mode = payload.get("energy_mode", "high_energy")
@@ -270,7 +325,8 @@ async def synthesize_delivery_endpoint(
 ):
     """
     Synthesizes Kannada text with expressive reference delivery while
-    strictly preserving 100% of the selected speaker identity (Gagan or Sapna).
+    strictly preserving 100% of the selected speaker identity (Gagan or Sapna)
+    and optimizing pronunciation via KannadaPronunciationEngine.
     """
     if not text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
@@ -328,12 +384,91 @@ async def synthesize_delivery_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 # -------------------------------------------------------------
+# STANDARD NORMAL TTS SYNTHESIS WITH PRONUNCIATION PREPROCESSING
+# -------------------------------------------------------------
+
+@app.post("/api/synthesize")
+async def synthesize_speech(payload: dict = Body(...)):
+    text = payload.get("text", "").strip()
+    voice = payload.get("voice", "kn-IN-SapnaNeural")
+    pitch = payload.get("pitch", "+0Hz")
+    rate = payload.get("rate", "+0%")
+    volume = payload.get("volume", "+0%")
+    energy_mode = payload.get("energy_mode", "standard")
+    eq_filter = payload.get("eq_filter", "natural")
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+
+    display_text, speech_text, transforms = KannadaPronunciationEngine.process_pronunciation(text)
+    
+    actual_voice = "kn-IN-SapnaNeural"
+    if voice == "podcast-narrator":
+        actual_voice = "kn-IN-GaganNeural"
+        pitch = "-4Hz"
+        rate = "+26%"
+        energy_mode = "ultra"
+    elif voice == "news-anchor":
+        actual_voice = "kn-IN-GaganNeural"
+        pitch = "+2Hz"
+        rate = "+18%"
+    elif voice == "kn-IN-GaganNeural" or "gagan" in voice.lower() or "male" in voice.lower():
+        actual_voice = "kn-IN-GaganNeural"
+    elif voice == "storyteller":
+        actual_voice = "kn-IN-SapnaNeural"
+        pitch = "-1Hz"
+        rate = "-6%"
+
+    try:
+        import edge_tts
+
+        communicate = edge_tts.Communicate(
+            text=speech_text,
+            voice=actual_voice,
+            pitch=pitch,
+            rate=rate,
+            volume=volume
+        )
+
+        audio_buffer = io.BytesIO()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_buffer.write(chunk["data"])
+
+        audio_buffer.seek(0)
+        raw_audio = audio_buffer.read()
+
+        SYNTHESIS_HISTORY.append({
+            "id": f"clip_{int(time.time()*1000)}",
+            "timestamp": time.strftime("%H:%M:%S"),
+            "text": display_text[:60] + ("..." if len(display_text) > 60 else ""),
+            "voice": f"{actual_voice} [Normal Mode]",
+            "duration": round(len(raw_audio) / 32000, 1)
+        })
+
+        return Response(
+            content=raw_audio,
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": "attachment; filename=dhvani_kannada.mp3",
+                "X-Display-Text": display_text.encode('unicode_escape').decode('ascii'),
+                "X-Speech-Text": speech_text.encode('unicode_escape').decode('ascii')
+            }
+        )
+
+    except Exception as e:
+        print(f"Edge TTS synthesis failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Kannada speech service is unavailable. Check your internet connection and try again."
+        ) from e
+
+# -------------------------------------------------------------
 # AI4BHARAT INDICF5 LOCAL ZERO-SHOT CLONING ENDPOINTS
 # -------------------------------------------------------------
 
 @app.get("/api/indic_f5/status")
 def indic_f5_status_endpoint():
-    """Returns local IndicF5 model status, device (MPS/CPU), and readiness."""
     return IndicF5Engine.get_status()
 
 @app.post("/api/indic_f5/synthesize")
@@ -343,9 +478,6 @@ async def indic_f5_synthesize_endpoint(
     hf_token: Optional[str] = Form(None),
     reference_audio: Optional[UploadFile] = File(None)
 ):
-    """
-    100% Local Zero-Shot Voice Cloning with AI4Bharat/IndicF5.
-    """
     if not text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
 
@@ -385,87 +517,6 @@ async def indic_f5_synthesize_endpoint(
         print(f"Error in indic_f5_synthesize: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# -------------------------------------------------------------
-# STANDARD NORMAL TTS SYNTHESIS (PRESERVED FOR COMPARISON)
-# -------------------------------------------------------------
-
-@app.post("/api/synthesize")
-async def synthesize_speech(payload: dict = Body(...)):
-    text = payload.get("text", "").strip()
-    voice = payload.get("voice", "kn-IN-SapnaNeural")
-    pitch = payload.get("pitch", "+0Hz")
-    rate = payload.get("rate", "+0%")
-    volume = payload.get("volume", "+0%")
-    energy_mode = payload.get("energy_mode", "standard")
-    eq_filter = payload.get("eq_filter", "natural")
-
-    if not text:
-        raise HTTPException(status_code=400, detail="Text cannot be empty")
-
-    normalized_text = KannadaNormalizer.normalize(text)
-    
-    actual_voice = "kn-IN-SapnaNeural"
-    if voice == "podcast-narrator":
-        actual_voice = "kn-IN-GaganNeural"
-        pitch = "-4Hz"
-        rate = "+26%"
-        energy_mode = "ultra"
-    elif voice == "news-anchor":
-        actual_voice = "kn-IN-GaganNeural"
-        pitch = "+2Hz"
-        rate = "+18%"
-    elif voice == "kn-IN-GaganNeural" or "gagan" in voice.lower() or "male" in voice.lower():
-        actual_voice = "kn-IN-GaganNeural"
-    elif voice == "storyteller":
-        actual_voice = "kn-IN-SapnaNeural"
-        pitch = "-1Hz"
-        rate = "-6%"
-
-    try:
-        import edge_tts
-
-        communicate = edge_tts.Communicate(
-            text=normalized_text,
-            voice=actual_voice,
-            pitch=pitch,
-            rate=rate,
-            volume=volume
-        )
-
-        audio_buffer = io.BytesIO()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_buffer.write(chunk["data"])
-
-        audio_buffer.seek(0)
-        raw_audio = audio_buffer.read()
-
-        SYNTHESIS_HISTORY.append({
-            "id": f"clip_{int(time.time()*1000)}",
-            "timestamp": time.strftime("%H:%M:%S"),
-            "text": text[:60] + ("..." if len(text) > 60 else ""),
-            "voice": f"{actual_voice} [Normal Mode]",
-            "duration": round(len(raw_audio) / 32000, 1)
-        })
-
-        return Response(
-            content=raw_audio,
-            media_type="audio/mpeg",
-            headers={
-                "Content-Disposition": "attachment; filename=dhvani_kannada.mp3",
-                "X-Normalized-Text": normalized_text.encode('unicode_escape').decode('ascii')
-            }
-        )
-
-    except Exception as e:
-        # A tone is not a useful substitute for speech.  Returning success here
-        # made failed synthesis look like a working TTS result in the browser.
-        print(f"Edge TTS synthesis failed: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail="Kannada speech service is unavailable. Check your internet connection and try again."
-        ) from e
-
 # ==========================================
 # STATIC FILES & WEB STUDIO MOUNT
 # ==========================================
@@ -475,7 +526,7 @@ def serve_index():
     index_file = WEB_DIR / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
-    return {"message": "Dhvani Kannada TTS Studio API Running. Web interface at /web"}
+    return {"message": "Dhvani Kannada TTS Studio API Running."}
 
 @app.get("/styles.css")
 def serve_css():
@@ -487,8 +538,7 @@ def serve_js():
 
 if __name__ == "__main__":
     print("================================================================")
-    print("  ಧ್ವನಿ KANNADA TEXT-TO-SPEECH WEB STUDIO IS RUNNING!           ")
+    print("  ಧ್ವನಿ KANNADA TEXT-TO-SPEECH WEB STUDIO v3.0 IS RUNNING!       ")
     print("  Open in browser: http://localhost:8000                         ")
     print("================================================================")
-    # File watching is optional and may be unavailable on restricted systems.
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)

@@ -21,6 +21,8 @@ from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 from scipy import signal
 
+from pronunciation_engine import KannadaPronunciationEngine
+
 try:
     from kannada_normalizer import KannadaNormalizer
 except ImportError:
@@ -381,17 +383,18 @@ class KannadaProsodyMapper:
     ) -> Dict[str, Any]:
         """
         Generates real-time segmented phrase blocks with live applied pitch, rate, and pause metadata.
+        Uses KannadaPronunciationEngine to optimize pronunciation while preserving original display text.
         """
         if prosody_profile is None:
             prosody_profile = BUILTIN_EXPRESSIVE_PROFILE
 
-        norm_text = KannadaNormalizer.normalize(kannada_text.strip())
+        display_text, speech_text, transforms = KannadaPronunciationEngine.process_pronunciation(kannada_text.strip())
         actual_voice = "kn-IN-GaganNeural" if ("gagan" in voice.lower() or "male" in voice.lower()) else "kn-IN-SapnaNeural"
         target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 12)
-        phrases = cls.segment_kannada_text(norm_text, target_aksharas=target_aksharas)
+        phrases = cls.segment_kannada_text(speech_text, target_aksharas=target_aksharas)
 
         if not phrases:
-            phrases = [{"text": norm_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "has_focus": has_focus_entity(norm_text), "punct": ".", "pause_type": "long"}]
+            phrases = [{"text": speech_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "has_focus": has_focus_entity(speech_text), "punct": ".", "pause_type": "long"}]
 
         plan = []
         total_estimated_ms = 0
@@ -425,12 +428,15 @@ class KannadaProsodyMapper:
             })
 
         return {
+            "display_text": display_text,
+            "speech_text": speech_text,
             "voice": actual_voice,
             "energy_mode": energy_mode,
             "pitch_depth": pitch_depth,
             "pacing_multiplier": pacing_multiplier,
             "pause_style": pause_style,
             "total_phrases": len(plan),
+            "transformations_applied": len(transforms),
             "estimated_total_sec": round(total_estimated_ms / 1000.0, 2),
             "baseline_metrics": {
                 "mean_pitch_hz": prosody_profile["pitch_dynamics"].get("mean_hz", 183.1),
@@ -456,25 +462,26 @@ class KannadaProsodyMapper:
     ) -> Tuple[bytes, Dict[str, Any]]:
         """
         Synthesizes Kannada text with expressive reference delivery while
-        strictly preserving 100% of the selected speaker identity (Gagan / Sapna).
+        strictly preserving 100% of the selected speaker identity (Gagan / Sapna)
+        and applying full pronunciation optimization layer.
         """
         import edge_tts
 
         if prosody_profile is None:
             prosody_profile = BUILTIN_EXPRESSIVE_PROFILE
 
-        # 1. Normalize text
-        norm_text = KannadaNormalizer.normalize(kannada_text.strip())
+        # 1. Pronunciation & Normalization Preprocessing
+        display_text, speech_text, transforms = KannadaPronunciationEngine.process_pronunciation(kannada_text.strip())
 
         # 2. Speaker Voice Identity (Gagan or Sapna)
         actual_voice = "kn-IN-GaganNeural" if ("gagan" in voice.lower() or "male" in voice.lower()) else "kn-IN-SapnaNeural"
 
         # 3. Target phrase length based on reference breath-group
         target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 12)
-        phrases = cls.segment_kannada_text(norm_text, target_aksharas=target_aksharas)
+        phrases = cls.segment_kannada_text(speech_text, target_aksharas=target_aksharas)
 
         if not phrases:
-            phrases = [{"text": norm_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "has_focus": has_focus_entity(norm_text), "punct": ".", "pause_type": "long"}]
+            phrases = [{"text": speech_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "has_focus": has_focus_entity(speech_text), "punct": ".", "pause_type": "long"}]
 
         temp_dir = tempfile.mkdtemp(prefix="dhvani_delivery_")
         pcm_chunks = []
@@ -568,10 +575,13 @@ class KannadaProsodyMapper:
                 final_bytes = f.read()
 
             metadata = {
+                "display_text": display_text,
+                "speech_text": speech_text,
                 "voice_used": actual_voice,
                 "phrase_count": len(phrases),
                 "energy_mode": energy_mode,
                 "applied_plan": applied_plan,
+                "transformations_applied": len(transforms),
                 "overall_pace": prosody_profile.get("speaking_rate", {}).get("pace_syl_sec", 8.5),
                 "dynamic_punch": round(energy_punch, 2),
                 "duration_sec": round(len(out_int16) / sr, 2)

@@ -7,372 +7,401 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Tiro+Kannada:ital@0;1&family=Noto+Sans+Kannada:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=3.2">
 </head>
 <body>
     <div class="app-container">
-        <!-- Header -->
+        
+        <!-- Top Navigation Header -->
         <header class="studio-header">
             <div class="brand-section">
-                <div class="logo-badge">
+                <div class="logo-row">
                     <span class="logo-kn">ಧ್ವನಿ</span>
+                    <span class="logo-divider">/</span>
                     <span class="logo-en">DHVANI</span>
-                    <span class="version-tag">Prosody & Delivery Engine</span>
+                    <span class="version-tag">AI Voice Studio</span>
                 </div>
-                <p class="brand-tagline">ಕನ್ನಡ ಧ್ವನಿ ಸಂಶ್ಲೇಷಣೆ & ಶೈಲಿ ವರ್ಗಾವಣೆ • Kannada Neural TTS & Reference Delivery Transfer</p>
+                <p class="brand-tagline">ಕನ್ನಡ AI ಧ್ವನಿ ಸಂಶ್ಲೇಷಣೆ ಸ್ಟುಡಿಯೋ • Kannada Neural Speech Studio</p>
             </div>
             
             <div class="header-actions">
-                <button id="openPresetsBtn" class="btn btn-secondary" title="ಮಾದರಿ ಪಠ್ಯಗಳು (Ctrl+K)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    <span>ಮಾದರಿಗಳು (Presets)</span>
+                <button id="openPresetsBtn" class="btn btn-nav" title="ಮಾದರಿ ಪಠ್ಯಗಳು (Sample Texts)">
+                    <span class="nav-icon">🎲</span>
+                    <span>ಮಾದರಿ ಪಠ್ಯಗಳು (Samples)</span>
                 </button>
-                <button id="openHistoryBtn" class="btn btn-secondary" title="ಇತಿಹಾಸ (History)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    <span>ಇತಿಹಾಸ</span>
+                <button id="openDictBtn" class="btn btn-nav" title="ಸುಧಾರಿತ ಉಚ್ಚಾರಣಾ ನಿಘಂಟು">
+                    <span class="nav-icon">⚙️</span>
+                    <span>ಸುಧಾರಿತ ಸೆಟ್ಟಿಂಗ್ಸ್ (Settings)</span>
                 </button>
-                <button id="themeToggleBtn" class="icon-btn" title="Toggle Theme">
+                <button id="themeToggleBtn" class="icon-btn" title="Toggle Dark/Light Theme">
                     <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                 </button>
             </div>
         </header>
 
-        <!-- Studio Mode Switcher Tabs -->
-        <div class="mode-tabs-container">
+        <!-- Segmented Mode Switcher Tabs -->
+        <nav class="mode-tabs-container">
             <button id="tabNormalTTS" class="mode-tab active">
                 <span class="tab-icon">🎙️</span>
-                <span class="tab-label">ಸಾಮಾನ್ಯ ಧ್ವನಿ (Standard TTS)</span>
+                <span class="tab-label">೧. ಸಾಮಾನ್ಯ ಧ್ವನಿಗಳು (Standard Voices)</span>
             </button>
             <button id="tabDeliveryTransfer" class="mode-tab">
                 <span class="tab-icon">⚡</span>
-                <span class="tab-label">ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (Expressive Voices)</span>
-                <span class="tab-badge">Built-in</span>
+                <span class="tab-label">೨. ಯೂಟ್ಯೂಬ್ ನಿರೂಪಕ (YouTube Presenter)</span>
+                <span class="tab-badge">Pro</span>
             </button>
             <button id="tabIndicF5" class="mode-tab">
                 <span class="tab-icon">🧬</span>
-                <span class="tab-label">AI4Bharat IndicF5 (ನರ ಕ್ಲೋನಿಂಗ್)</span>
-                <span class="tab-badge" id="indicF5DeviceBadge">Local GPU</span>
+                <span class="tab-label">೩. ಧ್ವನಿ ಕ್ಲೋನಿಂಗ್ (IndicF5 Cloning)</span>
+                <span class="tab-badge" id="indicF5DeviceBadge">Local</span>
             </button>
-        </div>
+        </nav>
 
-        <!-- Main Studio Grid -->
+        <!-- Main Workspace 2-Column Grid -->
         <main class="studio-grid">
-            <!-- Left Column: Input, Phonetics & Normalizer -->
-            <section class="card input-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        <h2>ಕನ್ನಡ ಪಠ್ಯ (Text Input)</h2>
+            
+            <!-- LEFT COLUMN: Step 1 - Text Input & Generate Action -->
+            <section class="card editor-card">
+                <div class="card-top-bar">
+                    <div class="card-heading">
+                        <span class="heading-step">ಹಂತ ೧</span>
+                        <h2>ಕನ್ನಡ ಪಠ್ಯ ಬರೆಯಿರಿ (Type Text)</h2>
                     </div>
                     
-                    <div class="input-tools">
-                        <button id="translitToggleBtn" class="toggle-badge" title="Type in English (namaskara) to automatically get Kannada (ನಮಸ್ಕಾರ)">
-                            <span class="toggle-icon">⌨️</span>
-                            <span id="translitLabel">ಲಿಪ್ಯಂತರಣ En ➔ ಕ [OFF]</span>
+                    <div class="editor-quick-tools">
+                        <button id="translitToggleBtn" class="tool-pill" title="Type English like 'namaskara' to convert to Kannada">
+                            <span class="pill-icon">⌨️</span>
+                            <span id="translitLabel">ಇಂಗ್ಲಿಷ್ ➔ ಕನ್ನಡ [OFF]</span>
                         </button>
-                        <button id="copyTextBtn" class="icon-btn" title="Copy text">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <button id="copyTextBtn" class="tool-icon-btn" title="Copy text">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                         </button>
-                        <button id="clearTextBtn" class="icon-btn" title="Clear text">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <button id="clearTextBtn" class="tool-icon-btn" title="Clear text">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
                 </div>
 
-                <div class="textarea-wrapper">
-                    <textarea id="kannadaInput" placeholder="ಇಲ್ಲಿ ಕನ್ನಡದಲ್ಲಿ ಪಠ್ಯ ಬರೆಯಿರಿ ಅಥವಾ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ 'namaskara' ಎಂದು ಟೈಪ್ ಮಾಡಿ..." rows="7">ಎಸ್‌ಸಿಒ ಸಮ್ಮೇಳನದಲ್ಲಿ ಭಾರತದ ಪಾತ್ರ ಅತ್ಯಂತ ಪ್ರಮುಖವಾಗಿದೆ. ಜಾಗತಿಕ ದಕ್ಷಿಣದ ದೇಶಗಳಿಗೆ ಭಾರತ ನೀಡಿದ ೧೦ ಅಂಶಗಳ ಕಾರ್ಯಸೂಚಿ ಇಡೀ ವಿಶ್ವದ ಗಮನ ಸೆಳೆದಿದೆ. ದೇಶದ ರಾಷ್ಟ್ರೀಯ ಭದ್ರತೆ ಮತ್ತು ಆರ್ಥಿಕ ಶಕ್ತಿ ಎರಡೂ ಅಷ್ಟೇ ಮುಖ್ಯ.</textarea>
+                <!-- Textarea Editor -->
+                <div class="editor-body">
+                    <textarea id="kannadaInput" placeholder="ಇಲ್ಲಿ ಕನ್ನಡದಲ್ಲಿ ಪಠ್ಯವನ್ನು ಬರೆಯಿರಿ ಅಥವಾ ಪೇಸ್ಟ್ ಮಾಡಿ..." rows="7">ನಾವು ₹1000 ಡಿಜಿಟಲ್ ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ, ವ್ಯಾಪಾರಿ 1% MDR ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ. ದಿನಾಂಕ 15/08/1947 ರಂದು ಆರಂಭವಾದ ಈ ಪದ್ಧತಿಯು ಇಂದು YouTube ಮತ್ತು ChatGPT ನಂತಹ AI ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ.</textarea>
                 </div>
 
-                <div class="input-meta">
-                    <div class="metrics-left">
-                        <span id="charCount">0 ಅಕ್ಷರಗಳು</span>
-                        <span class="dot-separator">•</span>
-                        <span id="wordCount">0 ಶಬ್ದಗಳು</span>
-                        <span class="dot-separator">•</span>
-                        <span id="estimatedDuration">~0.0 ಸೆಕೆಂಡುಗಳು</span>
+                <!-- Editor Footer Metrics Bar -->
+                <div class="editor-footer-bar">
+                    <div class="metrics-cluster">
+                        <span id="charCount" class="badge-metric">0 ಅಕ್ಷರಗಳು</span>
+                        <span id="wordCount" class="badge-metric">0 ಶಬ್ದಗಳು</span>
+                        <span id="estimatedDuration" class="badge-metric badge-accent">~0.0s</span>
                     </div>
-                    <div class="shortcuts-hint">
-                        <kbd>Ctrl</kbd> + <kbd>Enter</kbd> ನುಡಿಸಲು
+                    <div class="shortcut-tip">
+                        <span>ಶಾರ್ಟ್‌ಕಟ್: <kbd>Ctrl</kbd> + <kbd>↵</kbd></span>
                     </div>
                 </div>
 
-                <!-- Live Normalizer Accordion -->
-                <details class="normalizer-accordion" open>
-                    <summary>
-                        <div class="summary-title">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                            <span>ಉಚ್ಚಾರಣಾ ಪೂರ್ವವೀಕ್ಷಣೆ (Spoken Pronunciation Form)</span>
+                <!-- Primary Synthesis CTA Action Bar -->
+                <div class="primary-cta-row">
+                    <button id="primarySynthesizeBtn" class="btn btn-main-generate" title="Synthesize & Play Audio (Ctrl+Enter)">
+                        <svg id="primaryCtaPlayIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <svg id="primaryCtaPauseIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                        <span id="primaryCtaText">▶️ ಧ್ವನಿ ರಚಿಸಿ & ನುಡಿಸಿ (Generate & Play)</span>
+                    </button>
+                    <button id="randomSampleBtn" class="btn btn-secondary-cta" title="Load Random Kannada Text">
+                        <span>🎲 ಮಾದರಿ ಪಠ್ಯ</span>
+                    </button>
+                    <button id="downloadPrimaryBtn" class="btn btn-secondary-cta" title="Download Audio MP3">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>MP3 ಡೌನ್‌ಲೋಡ್</span>
+                    </button>
+                </div>
+
+                <!-- Sleek Collapsible Pronunciation Inspector (Closed by default) -->
+                <details class="inspector-accordion" id="pronunciationDebugAccordion">
+                    <summary class="inspector-summary">
+                        <div class="summary-label-row">
+                            <span class="summary-icon">🔬</span>
+                            <span class="summary-title">ಸುಧಾರಿತ ಉಚ್ಚಾರಣಾ ವಿವರಗಳು (Pronunciation Details)</span>
+                            <span id="debugRulesCountBadge" class="rule-count-pill">0 ನಿಯಮಗಳು</span>
                         </div>
-                        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </summary>
-                    <div class="normalizer-content-wrapper">
-                        <div id="normalizedPreview" class="normalizer-content">
-                            ಪಠ್ಯ ಲೋಡ್ ಆಗುತ್ತಿದೆ...
+
+                    <div class="inspector-drawer-body">
+                        <!-- 3-Stage Horizontal Flow -->
+                        <div class="stages-flow-grid">
+                            <div class="stage-step-card">
+                                <span class="step-num">1</span>
+                                <div class="step-info">
+                                    <span class="step-title">ಮೂಲ ಪಠ್ಯ (Display Text)</span>
+                                    <p id="debugDisplayText" class="step-content">(ಮೂಲ ಸ್ಕ್ರಿಪ್ಟ್)</p>
+                                </div>
+                            </div>
+                            <div class="step-arrow">➔</div>
+                            <div class="stage-step-card">
+                                <span class="step-num step-num-orange">2</span>
+                                <div class="step-info">
+                                    <span class="step-title">ಸಾಮಾನ್ಯೀಕರಣ (Normalized)</span>
+                                    <p id="debugNormalizedText" class="step-content">(ಸಂಖ್ಯೆ/ದಿನಾಂಕ)</p>
+                                </div>
+                            </div>
+                            <div class="step-arrow">➔</div>
+                            <div class="stage-step-card step-highlighted">
+                                <span class="step-num step-num-green">3</span>
+                                <div class="step-info">
+                                    <span class="step-title">ಆಡಿಯೊ ಪಠ್ಯ (Speech Text)</span>
+                                    <p id="debugSpeechText" class="step-content speech-text-highlight">(Edge TTS ಟಾರ್ಗೆಟ್)</p>
+                                </div>
+                            </div>
                         </div>
-                        <p class="normalizer-tip">ಸಂಖ್ಯೆಗಳು (೧೨೫೦ ➔ ಒಂದು ಸಾವಿರದ ಇನ್ನೂರ ಐವತ್ತು), ಕರೆನ್ಸಿ (₹೪೫೦ ➔ ನಾನೂರ ಐವತ್ತು ರೂಪಾಯಿಗಳು) ಮತ್ತು ದಿನಾಂಕಗಳು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಧ್ವನಿಗೆ ಪರಿವರ್ತನೆಯಾಗುತ್ತವೆ.</p>
+
+                        <!-- Applied Rules Trail -->
+                        <div class="inspector-audit-box">
+                            <div class="audit-box-header">
+                                <span>🔍 ಅನ್ವಯಿಸಲಾದ ಉಚ್ಚಾರಣಾ ನಿಯಮಗಳು:</span>
+                                <button id="openDictFromDebugBtn" class="link-action-btn">⚙️ ನಿಘಂಟು ನಿರ್ವಹಣೆ</button>
+                            </div>
+                            <div id="transformsList" class="rules-chips-container">
+                                <span class="empty-rules-hint">ಶುದ್ಧ ಕನ್ನಡ ಲಿಪಿ</span>
+                            </div>
+                        </div>
                     </div>
                 </details>
+
+                <div id="normalizedPreview" class="hidden"></div>
             </section>
 
-            <!-- Right Column: Settings & Modes -->
-            <section class="card settings-card">
+            <!-- RIGHT COLUMN: Step 2 - Voice Selection & Controls -->
+            <section class="card controls-card">
                 
                 <!-- ========================================== -->
                 <!-- MODE 1: STANDARD TTS CONTROLS PANEL        -->
                 <!-- ========================================== -->
                 <div id="standardTTSPanel" class="mode-panel">
-                    <div class="section-block">
-                        <div class="section-header-row">
-                            <label class="section-label">ಧ್ವನಿ ಆಯ್ಕೆ (Voice Selection)</label>
-                            <span class="voice-count-badge">ಮೂಲ ಧ್ವನಿಗಳು</span>
+                    
+                    <!-- Voice Selection Grid -->
+                    <div class="control-section">
+                        <div class="section-title-row">
+                            <div class="card-heading">
+                                <span class="heading-step">ಹಂತ ೨</span>
+                                <label class="control-label">ಧ್ವನಿ ಆಯ್ಕೆಮಾಡಿ (Select Voice)</label>
+                            </div>
+                            <span class="badge-subtle">೪ ನೈಸರ್ಗಿಕ ಧ್ವನಿಗಳು</span>
                         </div>
-                        <div class="voice-grid">
-                            <!-- Female Voice 1: Sapna -->
+
+                        <div class="voice-cards-grid">
+                            <!-- Sapna (Female) -->
                             <div class="voice-card active" data-gender="female" data-voice="kn-IN-SapnaNeural" data-preset="natural">
-                                <div class="voice-icon female-icon">👩‍💼</div>
-                                <div class="voice-details">
-                                    <div class="voice-name-row">
-                                        <span class="voice-name">Sapna (ಸ್ಪಪ್ನಾ)</span>
+                                <div class="voice-avatar avatar-female">👩‍💼</div>
+                                <div class="voice-meta">
+                                    <div class="voice-title-row">
+                                        <span class="voice-title">Sapna (ಸ್ಪಪ್ನಾ)</span>
                                         <span class="tag-badge tag-popular">ಜನಪ್ರಿಯ</span>
                                     </div>
-                                    <div class="voice-desc">ಮಧುರ, ಸ್ಪಷ್ಟ ಹೆಣ್ಣು ಧ್ವನಿ</div>
+                                    <span class="voice-sub">ಮಧುರ & ಸ್ಪಷ್ಟ ಹೆಣ್ಣು ಧ್ವನಿ</span>
                                 </div>
-                                <div class="voice-check">✓</div>
+                                <div class="voice-radio">✓</div>
                             </div>
 
-                            <!-- Male Voice 1: Gagan -->
+                            <!-- Gagan (Male) -->
                             <div class="voice-card" data-gender="male" data-voice="kn-IN-GaganNeural" data-preset="natural">
-                                <div class="voice-icon male-icon">👨‍💼</div>
-                                <div class="voice-details">
-                                    <div class="voice-name-row">
-                                        <span class="voice-name">Gagan (ಗಗನ್)</span>
+                                <div class="voice-avatar avatar-male">👨‍💼</div>
+                                <div class="voice-meta">
+                                    <div class="voice-title-row">
+                                        <span class="voice-title">Gagan (ಗಗನ್)</span>
                                         <span class="tag-badge tag-classic">ಕ್ಲಾಸಿಕ್</span>
                                     </div>
-                                    <div class="voice-desc">ಗಂಭೀರ, ಸ್ಪಷ್ಟ ಗಂಡು ಧ್ವನಿ</div>
+                                    <span class="voice-sub">ಗಂಭೀರ, ಅಧಿಕೃತ ಗಂಡು ಧ್ವನಿ</span>
                                 </div>
-                                <div class="voice-check">✓</div>
+                                <div class="voice-radio">✓</div>
                             </div>
 
                             <!-- Podcast Narrator -->
                             <div class="voice-card" data-gender="male" data-preset="podcast" data-voice="podcast-narrator">
-                                <div class="voice-icon podcast-icon">🎙️</div>
-                                <div class="voice-details">
-                                    <div class="voice-name-row">
-                                        <span class="voice-name">Podcast Presenter</span>
+                                <div class="voice-avatar avatar-podcast">🎙️</div>
+                                <div class="voice-meta">
+                                    <div class="voice-title-row">
+                                        <span class="voice-title">YouTube Creator</span>
                                         <span class="tag-badge tag-fire">🔥 ಎನರ್ಜಿ</span>
                                     </div>
-                                    <div class="voice-desc">ಉತ್ಸಾಹಭರಿತ ಯೂಟ್ಯೂಬ್ ನಿರೂಪಕ</div>
+                                    <span class="voice-sub">ಉತ್ಸಾಹಭರಿತ ಯೂಟ್ಯೂಬ್ ಶೈಲಿ</span>
                                 </div>
-                                <div class="voice-check">✓</div>
+                                <div class="voice-radio">✓</div>
                             </div>
 
                             <!-- Breaking News Anchor -->
                             <div class="voice-card" data-gender="male" data-preset="news" data-voice="news-anchor">
-                                <div class="voice-icon news-icon">📢</div>
-                                <div class="voice-details">
-                                    <div class="voice-name-row">
-                                        <span class="voice-name">Breaking News</span>
+                                <div class="voice-avatar avatar-news">📢</div>
+                                <div class="voice-meta">
+                                    <div class="voice-title-row">
+                                        <span class="voice-title">News Anchor</span>
                                         <span class="tag-badge tag-news">ವಾರ್ತೆ</span>
                                     </div>
-                                    <div class="voice-desc">ವೇಗದ ಟಿವಿ ವಾರ್ತಾ ನಿರೂಪಣೆ</div>
+                                    <span class="voice-sub">ವೇಗದ ಟಿವಿ ವಾರ್ತಾ ನಿರೂಪಣೆ</span>
                                 </div>
-                                <div class="voice-check">✓</div>
+                                <div class="voice-radio">✓</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Sliders -->
-                    <div class="section-block sliders-block">
-                        <div class="slider-row">
-                            <div class="slider-header">
-                                <span class="slider-title">ಸ್ವರದ ಶ್ರುತಿ (Pitch)</span>
-                                <span id="pitchValue" class="slider-badge">0 Hz</span>
-                            </div>
-                            <input type="range" id="pitchSlider" min="-30" max="30" value="0" step="1">
-                        </div>
-
-                        <div class="slider-row">
-                            <div class="slider-header">
-                                <span class="slider-title">ಓದುವ ವೇಗ (Speed / Rate)</span>
-                                <span id="rateValue" class="slider-badge">1.0x</span>
-                            </div>
-                            <input type="range" id="rateSlider" min="0.5" max="2.0" value="1.0" step="0.05">
+                    <!-- Quick Style Presets Bar -->
+                    <div class="control-section">
+                        <label class="control-label">⚡ ವೇಗ & ಶೈಲಿ ಪ್ರಿಸೆಟ್‌ಗಳು (Speed & Style)</label>
+                        <div class="preset-chips-bar" id="voicePresetChips">
+                            <button class="voice-preset-chip active" data-pitch="0" data-rate="1.0">⚡ ಸಾಮಾನ್ಯ (1.0x)</button>
+                            <button class="voice-preset-chip" data-pitch="0" data-rate="1.25">💨 ವೇಗ (1.25x)</button>
+                            <button class="voice-preset-chip" data-pitch="-2" data-rate="0.9">🧘 ಶಾಂತ (0.9x)</button>
+                            <button class="voice-preset-chip" data-pitch="-4" data-rate="1.0">🔊 ಗಂಭೀರ ಬಾಸು</button>
+                            <button class="voice-preset-chip" data-pitch="4" data-rate="1.1">✨ ಉಲ್ಲಾಸಭರಿತ</button>
                         </div>
                     </div>
+
+                    <!-- Pitch & Rate Sliders -->
+                    <div class="control-section sliders-panel">
+                        <div class="slider-field">
+                            <div class="slider-title-bar">
+                                <span class="field-name">ಸ್ವರದ ಶ್ರುತಿ (Pitch)</span>
+                                <span id="pitchValue" class="field-val-badge">0 Hz</span>
+                            </div>
+                            <input type="range" id="pitchSlider" min="-30" max="30" value="0" step="1" class="studio-range">
+                        </div>
+
+                        <div class="slider-field">
+                            <div class="slider-title-bar">
+                                <span class="field-name">ಓದುವ ವೇಗ (Speed)</span>
+                                <span id="rateValue" class="field-val-badge">1.0x</span>
+                            </div>
+                            <input type="range" id="rateSlider" min="0.5" max="2.0" value="1.0" step="0.05" class="studio-range">
+                        </div>
+                    </div>
+
+                    <!-- Action Button in Standard Mode -->
+                    <button id="standardPlayCtaBtn" class="btn btn-panel-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span>🔊 ಆಯ್ಕೆಮಾಡಿದ ಧ್ವನಿಯಲ್ಲಿ ಪ್ಲೇ ಮಾಡಿ (Play Audio)</span>
+                    </button>
                 </div>
 
                 <!-- ========================================== -->
                 <!-- MODE 2: DELIVERY STYLE TRANSFER PANEL      -->
                 <!-- ========================================== -->
                 <div id="deliveryTransferPanel" class="mode-panel hidden">
-                    <div class="delivery-hero-box">
-                        <div class="hero-title">
-                            <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (YouTube Presenter Delivery Transfer)</span>
-                        </div>
-                        <p class="hero-desc">
-                            ಯೂಟ್ಯೂಬ್ ಪ್ರಸ್ತುತಿಕಾರರ ರಿಯಲ್-ಟೈಮ್ ಅಕೌಸ್ಟಿಕ್ ಪ್ರೊಫೈಲ್. ಯಾವುದೇ ಕನ್ನಡ ಪಠ್ಯಕ್ಕೂ ಸ್ವಾಭಾವಿಕ ಪಿಚ್ ಸ್ವಿಂಗ್ (~೮೩ Hz), ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್ (೮.೫ syl/s), ಮತ್ತು ಸ್ನ್ಯಾಪಿ ವಿರಾಮಗಳನ್ನು ರಿಯಲ್-ಟೈಮ್‌ನಲ್ಲಿ ಅನ್ವಯಿಸುತ್ತದೆ.
-                        </p>
+                    
+                    <div class="delivery-banner">
+                        <div class="banner-badge">⚡ YouTube Presenter Engine</div>
+                        <p class="banner-desc">ಯೂಟ್ಯೂಬ್ ನಿರೂಪಕರ ಶೈಲಿ: ಸ್ವಾಭಾವಿಕ ಪಿಚ್ ಸ್ವಿಂಗ್ (~೮೩ Hz), ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್, ಮತ್ತು ಸ್ನ್ಯಾಪಿ ವಿರಾಮಗಳು.</p>
                     </div>
 
-                    <!-- 1. Live Acoustic Profiler Metrics Dashboard -->
-                    <div class="acoustic-stats-grid">
-                        <div class="metric-box">
-                            <div class="metric-icon">📈</div>
-                            <div class="metric-data">
-                                <span class="metric-label">ಪಿಚ್ ಶ್ರುತಿ ಚಲನೆ (Pitch Excursion)</span>
-                                <span class="metric-val" id="metricPitchSpan">~82.9 Hz</span>
-                                <span class="metric-sub">Median: 157.1 Hz (123 - 206 Hz)</span>
-                            </div>
-                        </div>
-
-                        <div class="metric-box">
-                            <div class="metric-icon">⚡</div>
-                            <div class="metric-data">
-                                <span class="metric-label">ಎನರ್ಜಿ ರೇಂಜ್ (Dynamic Range)</span>
-                                <span class="metric-val" id="metricEnergyRange">26.3 dB</span>
-                                <span class="metric-sub">Mean RMS: -23.9 dB (High Dynamic)</span>
-                            </div>
-                        </div>
-
-                        <div class="metric-box">
-                            <div class="metric-icon">⏱️</div>
-                            <div class="metric-data">
-                                <span class="metric-label">ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್ (Burst Pace)</span>
-                                <span class="metric-val" id="metricBurstPace">8.5 syl/sec</span>
-                                <span class="metric-sub">ಅಲ್ಟ್ರಾ-ಫಾಸ್ಟ್ ಪ್ರಸ್ತುತಿಕಾರರ ವೇಗ</span>
-                            </div>
-                        </div>
-
-                        <div class="metric-box">
-                            <div class="metric-icon">⏸️</div>
-                            <div class="metric-data">
-                                <span class="metric-label">ವಿರಾಮ ಫಿಲ್ಟರ್ (Smart Pauses)</span>
-                                <span class="metric-val" id="metricPauses">80ms / 190ms</span>
-                                <span class="metric-sub">ವೀಡಿಯೊ ಕಟ್‌ಗಳು ಆಟೋ-ಫಿಲ್ಟರ್ ಆಗಿದೆ</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 2. Speaker Voice Identity -->
-                    <div class="section-block">
-                        <label class="section-label">👤 ಮೂಲ ನರ-ಧ್ವನಿ (Speaker Voice Identity)</label>
-                        <div class="identity-picker-row">
+                    <!-- Voice Identity -->
+                    <div class="control-section">
+                        <label class="control-label">👤 ನಿರೂಪಕರ ಧ್ವನಿ (Presenter Voice)</label>
+                        <div class="identity-toggle-group">
                             <button id="pickGaganBtn" class="identity-card active" data-voice="kn-IN-GaganNeural">
-                                <span class="id-icon">👨‍💼</span>
-                                <div class="id-text">
+                                <span class="id-avatar">👨‍💼</span>
+                                <div class="id-meta">
                                     <span class="id-name">Gagan (ಗಗನ್)</span>
-                                    <span class="id-sub">ಗಂಡು ಧ್ವನಿ • ೧೦೦% ನೈಜ ಗುರುತು</span>
+                                    <span class="id-role">ಗಂಡು ಧ್ವನಿ</span>
                                 </div>
-                                <span class="id-check">✓</span>
+                                <span class="id-indicator">✓</span>
                             </button>
                             <button id="pickSapnaBtn" class="identity-card" data-voice="kn-IN-SapnaNeural">
-                                <span class="id-icon">👩‍💼</span>
-                                <div class="id-text">
+                                <span class="id-avatar">👩‍💼</span>
+                                <div class="id-meta">
                                     <span class="id-name">Sapna (ಸ್ಪಪ್ನಾ)</span>
-                                    <span class="id-sub">ಹೆಣ್ಣು ಧ್ವನಿ • ೧೦೦% ನೈಜ ಗುರುತು</span>
+                                    <span class="id-role">ಹೆಣ್ಣು ಧ್ವನಿ</span>
                                 </div>
-                                <span class="id-check">✓</span>
+                                <span class="id-indicator">✓</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 3. Real-Time Interactive Delivery Controllers -->
-                    <div class="section-block delivery-controls-card">
-                        <label class="section-label">🎛️ ರಿಯಲ್-ಟೈಮ್ ಅಟ್ರಿಬ್ಯೂಟ್ ನಿಯಂತ್ರಕಗಳು (Real-Time Prosody Modifiers)</label>
-                        
-                        <!-- Energy Section Mode Chips -->
-                        <div class="control-subgroup">
-                            <span class="control-subtitle">🔥 ಎನರ್ಜಿ ಮೋಡ್ (Presenter Energy Section)</span>
-                            <div class="chips-row" id="energyModeChips">
-                                <button class="chip-btn" data-energy="calm">🍃 ಶಾಂತ (Calm)</button>
-                                <button class="chip-btn" data-energy="balanced">⚖️ ಸಮತೋಲಿತ (Balanced)</button>
-                                <button class="chip-btn active" data-energy="high_energy">🔥 ಹೈ-ಎನರ್ಜಿ (High-Energy)</button>
-                                <button class="chip-btn" data-energy="dramatic">⚡ ಕ್ಲೈಮ್ಯಾಕ್ಸ್ (Dramatic)</button>
+                    <!-- Energy Mode & Modifiers -->
+                    <div class="control-section">
+                        <label class="control-label">🔥 ಎನರ್ಜಿ ಮೋಡ್ (Energy Level)</label>
+                        <div class="chips-row" id="energyModeChips">
+                            <button class="chip-btn" data-energy="calm">🍃 ಶಾಂತ</button>
+                            <button class="chip-btn" data-energy="balanced">⚖️ ಸಮತೋಲಿತ</button>
+                            <button class="chip-btn active" data-energy="high_energy">🔥 ಹೈ-ಎನರ್ಜಿ</button>
+                            <button class="chip-btn" data-energy="dramatic">⚡ ಕ್ಲೈಮ್ಯಾಕ್ಸ್</button>
+                        </div>
+                    </div>
+
+                    <div class="control-section sliders-panel">
+                        <div class="slider-field">
+                            <div class="slider-title-bar">
+                                <span class="field-name">ಪಿಚ್ ಸ್ವಿಂಗ್ (Pitch Swing)</span>
+                                <span id="pitchDepthVal" class="field-val-badge">1.0x (~83 Hz)</span>
                             </div>
+                            <input type="range" id="pitchDepthSlider" min="0.5" max="2.0" value="1.0" step="0.1" class="studio-range">
                         </div>
 
-                        <!-- Pitch Excursion Depth Slider -->
-                        <div class="slider-row">
-                            <div class="slider-header">
-                                <span class="slider-title">ಪಿಚ್ ಶ್ರುತಿ ಸ್ವಿಂಗ್ (Pitch Excursion Depth)</span>
-                                <span id="pitchDepthVal" class="slider-badge">1.0x (~83 Hz)</span>
+                        <div class="slider-field">
+                            <div class="slider-title-bar">
+                                <span class="field-name">ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್ ವೇಗ (Burst Pace)</span>
+                                <span id="burstPaceVal" class="field-val-badge">8.5 syl/s</span>
                             </div>
-                            <input type="range" id="pitchDepthSlider" min="0.5" max="2.0" value="1.0" step="0.1">
+                            <input type="range" id="burstPaceSlider" min="0.8" max="1.5" value="1.0" step="0.05" class="studio-range">
                         </div>
 
-                        <!-- Burst Pacing Slider -->
-                        <div class="slider-row">
-                            <div class="slider-header">
-                                <span class="slider-title">ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್ ವೇಗ (Burst Pace / Speed)</span>
-                                <span id="burstPaceVal" class="slider-badge">8.5 syl/s (+38%)</span>
-                            </div>
-                            <input type="range" id="burstPaceSlider" min="0.8" max="1.5" value="1.0" step="0.05">
-                        </div>
-
-                        <!-- Pause Style Chips -->
-                        <div class="control-subgroup">
-                            <span class="control-subtitle">⏸️ ವಿರಾಮ ಶೈಲಿ (Pause Timing Style)</span>
+                        <!-- Pause Style -->
+                        <div class="sub-field-row">
+                            <span class="sub-field-name">⏸️ ವಿರಾಮ ಶೈಲಿ:</span>
                             <div class="chips-row" id="pauseStyleChips">
-                                <button class="chip-btn active" data-pause="snappy">⚡ ಸ್ನ್ಯಾಪಿ (75ms/180ms)</button>
-                                <button class="chip-btn" data-pause="balanced">⚖️ ಸಮತೋಲಿತ (100ms/240ms)</button>
-                                <button class="chip-btn" data-pause="dramatic">🎭 ನಾಟಕೀಯ (140ms/380ms)</button>
+                                <button class="chip-btn active" data-pause="snappy">⚡ ಸ್ನ್ಯಾಪಿ</button>
+                                <button class="chip-btn" data-pause="balanced">⚖️ ಸಮತೋಲಿತ</button>
+                                <button class="chip-btn" data-pause="dramatic">🎭 ನಾಟಕೀಯ</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 4. Live Real-Time Phrase Breakdown Visualizer -->
-                    <div class="section-block live-phrases-box">
-                        <div class="live-phrases-header">
-                            <label class="section-label">🔍 ಲೈವ್ ಫ್ರೇಸ್ ವಿಶ್ಲೇಷಣೆ (Real-Time Phrase Breakdown)</label>
-                            <span id="livePhrasesCount" class="badge-count">0 ವಾಕ್ಯಖಂಡಗಳು</span>
-                        </div>
-                        <div id="livePhraseContainer" class="live-phrase-list">
-                            <div class="empty-phrase-hint">ಪಠ್ಯವನ್ನು ಟೈಪ್ ಮಾಡಿದಂತೆ ಇಲ್ಲಿ ರಿಯಲ್-ಟೈಮ್‌ನಲ್ಲಿ ಫ್ರೇಸ್‌ಗಳು ಪ್ರದರ್ಶನಗೊಳ್ಳುತ್ತವೆ...</div>
-                        </div>
-                    </div>
-
-                    <!-- Generate Styled Audio Button -->
-                    <button id="generateStyledBtn" class="btn btn-generate-styled">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ ರಚಿಸಿ (Synthesize Expressive Audio)</span>
+                    <!-- Generate Button -->
+                    <button id="generateStyledBtn" class="btn btn-panel-delivery">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ ರಚಿಸಿ (Synthesize Expressive)</span>
                     </button>
 
                     <!-- A/B Comparison Switcher -->
-                    <div id="abComparisonBox" class="ab-compare-box hidden">
-                        <div class="ab-title">🎧 ಮುನ್ನೋಟ ಹೋಲಿಕೆ (A/B Compare)</div>
-                        <div class="ab-btn-row">
-                            <button id="playNormalABBtn" class="btn btn-ab">
+                    <div id="abComparisonBox" class="ab-compare-container hidden">
+                        <div class="ab-heading">🎧 ಮುನ್ನೋಟ ಹೋಲಿಕೆ (A/B Comparison)</div>
+                        <div class="ab-buttons-grid">
+                            <button id="playNormalABBtn" class="btn btn-ab-choice">
                                 <span>🔊 Normal Voice</span>
                             </button>
-                            <button id="playStyledABBtn" class="btn btn-ab active">
+                            <button id="playStyledABBtn" class="btn btn-ab-choice active">
                                 <span>⚡ Delivery Styled</span>
                             </button>
                         </div>
                     </div>
+
+                    <!-- Collapsible Live Phrase Breakdown -->
+                    <details class="phrases-accordion">
+                        <summary class="phrases-summary">
+                            <span>🔍 ಲೈವ್ ಫ್ರೇಸ್ ವಿಶ್ಲೇಷಣೆ (Live Phrases)</span>
+                            <span id="livePhrasesCount" class="badge-count">0 ವಾಕ್ಯಖಂಡಗಳು</span>
+                        </summary>
+                        <div id="livePhraseContainer" class="live-phrase-list">
+                            <div class="empty-phrase-hint">ಪಠ್ಯವನ್ನು ಟೈಪ್ ಮಾಡಿದಂತೆ ಇಲ್ಲಿ ರಿಯಲ್-ಟೈಮ್‌ನಲ್ಲಿ ಫ್ರೇಸ್‌ಗಳು ಪ್ರದರ್ಶನಗೊಳ್ಳುತ್ತವೆ...</div>
+                        </div>
+                    </details>
                 </div>
 
                 <!-- ========================================== -->
                 <!-- MODE 3: AI4BHARAT INDICF5 CLONING PANEL    -->
                 <!-- ========================================== -->
                 <div id="indicF5Panel" class="mode-panel hidden">
-                    <div class="delivery-hero-box">
-                        <div class="hero-title">
-                            <span>🧬 AI4Bharat IndicF5 (Zero-Shot Neural Cloning)</span>
-                        </div>
-                        <p class="hero-desc">
-                            ಐಐಟಿ ಮದ್ರಾಸ್‌ನ IndicF5 ನರ-ಮಾದರಿ (Flow-Matching Diffusion). ಯಾವುದೇ ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ ನೀಡಿ ನೈಜ ಧ್ವನಿಯನ್ನು ಕನ್ನಡಕ್ಕೆ ಕ್ಲೋನ್ ಮಾಡಿ (100% ಲೋಕಲ್, No Colab).
-                        </p>
+                    <div class="delivery-banner">
+                        <div class="banner-badge">🧬 IndicF5 Neural Cloning</div>
+                        <p class="banner-desc">ಐಐಟಿ ಮದ್ರಾಸ್‌ನ IndicF5 ನರ-ಮಾದರಿ (Zero-Shot). ಧ್ವನಿ ಮಾದರಿಯನ್ನು ನೀಡಿ ನೈಜ ಧ್ವನಿಯನ್ನು ಕನ್ನಡಕ್ಕೆ ಕ್ಲೋನ್ ಮಾಡಿ.</p>
                     </div>
 
-                    <div class="section-block">
-                        <label class="section-label">🎙️ ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ (Reference Voice Clip)</label>
+                    <div class="control-section">
+                        <label class="control-label">🎙️ ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ (Reference Voice Clip)</label>
                         <div class="dropzone-box" id="f5AudioDropzone">
                             <input type="file" id="f5AudioFileInput" accept="audio/*" class="hidden">
                             <div class="dropzone-content" id="f5DropzonePrompt">
                                 <div class="dropzone-icon">📁</div>
                                 <div class="dropzone-text">
-                                    <span class="main-drop-text">ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ ಅಥವಾ ಡ್ರ್ಯಾಗ್ ಮಾಡಿ</span>
-                                    <span class="sub-drop-text">MP3, WAV, M4A (5-15 ಸೆಕೆಂಡುಗಳ ಸ್ಪಷ್ಟ ಧ್ವನಿ ಮಾದರಿ)</span>
+                                    <span class="main-drop-text">ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ</span>
+                                    <span class="sub-drop-text">MP3, WAV (5-15 ಸೆಕೆಂಡುಗಳ ಧ್ವನಿ ಮಾದರಿ)</span>
                                 </div>
                             </div>
                             <div class="dropzone-loaded hidden" id="f5LoadedBox">
@@ -381,39 +410,37 @@
                                     <span id="f5LoadedFilename" class="loaded-name">reference.mp3</span>
                                     <span id="f5LoadedMeta" class="loaded-size">ಕ್ಲಿಪ್ ಲೋಡ್ ಆಗಿದೆ</span>
                                 </div>
-                                <button id="f5RemoveAudioBtn" class="icon-btn" title="Remove Audio">✕</button>
+                                <button id="f5RemoveAudioBtn" class="icon-btn-remove" title="Remove Audio">✕</button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="section-block">
-                        <label class="section-label">📝 ರೆಫರೆನ್ಸ್ ಪಠ್ಯ (Reference Transcript - Optional)</label>
-                        <input type="text" id="f5TranscriptInput" class="custom-input" placeholder="ಆಡಿಯೊದಲ್ಲಿರುವ ಪಠ್ಯ (ಉದಾ: ನಮಸ್ಕಾರ, ಎಲ್ಲರಿಗೂ ಸ್ವಾಗತ...)">
+                    <div class="control-section">
+                        <label class="control-label">📝 ರೆಫರೆನ್ಸ್ ಪಠ್ಯ (Transcript - Optional)</label>
+                        <input type="text" id="f5TranscriptInput" class="studio-text-input" placeholder="ಆಡಿಯೊದಲ್ಲಿರುವ ಪಠ್ಯ...">
                     </div>
 
                     <!-- Generate Button -->
-                    <button id="generateF5Btn" class="btn btn-generate-styled">
+                    <button id="generateF5Btn" class="btn btn-panel-action">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        <span>🧬 IndicF5 ಧ್ವನಿ ತಯಾರಿಸಿ (Generate IndicF5 Speech)</span>
+                        <span>🧬 IndicF5 ಧ್ವನಿ ತಯಾರಿಸಿ (Generate IndicF5)</span>
                     </button>
                 </div>
 
             </section>
         </main>
 
-        <!-- Floating Player Bar -->
+        <!-- Fixed Bottom Floating Studio Player Bar -->
         <footer class="player-bar">
             <div class="player-left">
-                <!-- Visualizer Waveform Canvas -->
-                <canvas id="waveformCanvas" width="140" height="38"></canvas>
+                <canvas id="waveformCanvas" width="130" height="36"></canvas>
                 <div class="playback-meta">
                     <div id="statusText" class="playback-status">ಸಿದ್ಧವಾಗಿದೆ (Ready)</div>
-                    <div id="activeVoiceInfo" class="playback-voice">Gagan • ಸಾಮಾನ್ಯ ಮೋಡ್</div>
+                    <div id="activeVoiceInfo" class="playback-voice">Sapna • ಸಾಮಾನ್ಯ ಮೋಡ್</div>
                 </div>
             </div>
 
             <div class="player-center">
-                <!-- Audio Scrubber / Progress -->
                 <div class="scrubber-container">
                     <span id="currentTime" class="time-label">0:00</span>
                     <input type="range" id="audioScrubber" min="0" max="100" value="0" class="progress-slider">
@@ -422,31 +449,24 @@
             </div>
 
             <div class="player-right">
-                <!-- Playback Speed Switcher -->
-                <button id="playbackSpeedBtn" class="control-btn speed-toggle-btn" title="Change Playback Speed">
+                <button id="playbackSpeedBtn" class="btn-player-speed" title="Change Playback Speed">
                     1.0x
                 </button>
-
-                <!-- Stop Button -->
-                <button id="stopBtn" class="control-btn icon-circle btn-danger" title="Stop (Esc)">
+                <button id="stopBtn" class="btn-player-icon btn-stop" title="Stop (Esc)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
                 </button>
-
-                <!-- Play/Pause Button -->
-                <button id="playBtn" class="control-btn play-btn" title="Synthesize & Play (Ctrl+Enter)">
+                <button id="playBtn" class="btn-player-main" title="Synthesize & Play (Ctrl+Enter)">
                     <svg id="playIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     <svg id="pauseIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
                     <div id="loadingSpinner" class="spinner hidden"></div>
                 </button>
-
-                <!-- Download MP3 Button -->
-                <button id="downloadBtn" class="control-btn icon-circle btn-accent" title="Download Audio MP3">
+                <button id="downloadBtn" class="btn-player-icon btn-dl" title="Download Audio MP3">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 </button>
             </div>
         </footer>
 
-        <!-- Hidden Audio Elements for A/B Playback -->
+        <!-- Hidden Audio Elements -->
         <audio id="audioPlayer" preload="auto"></audio>
         <audio id="normalAudioPlayer" preload="auto"></audio>
         <audio id="styledAudioPlayer" preload="auto"></audio>
@@ -455,8 +475,8 @@
         <div id="presetsModal" class="modal-backdrop hidden">
             <div class="modal-dialog">
                 <div class="modal-header">
-                    <h3>ಕನ್ನಡ ಮಾದರಿ ಪಠ್ಯಗಳು (Sample Presets)</h3>
-                    <button id="closePresetsBtn" class="icon-btn">
+                    <h3>ಕನ್ನಡ ಮಾದರಿ ಪಠ್ಯಗಳು (Sample Texts)</h3>
+                    <button id="closePresetsBtn" class="icon-btn-close">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
@@ -465,16 +485,75 @@
             </div>
         </div>
 
-        <!-- History Drawer -->
-        <div id="historyDrawer" class="modal-backdrop hidden">
-            <div class="modal-dialog">
+        <!-- Pronunciation Dictionary Modal -->
+        <div id="dictModal" class="modal-backdrop hidden">
+            <div class="modal-dialog dict-modal-dialog">
                 <div class="modal-header">
-                    <h3>ಧ್ವನಿ ಸಂಶ್ಲೇಷಣೆ ಇತಿಹಾಸ (Audio History)</h3>
-                    <button id="closeHistoryBtn" class="icon-btn">
+                    <div class="dict-modal-title">
+                        <div class="dict-icon">📖</div>
+                        <div>
+                            <h3>ಉಚ್ಚಾರಣಾ ನಿಘಂಟು (Pronunciation Dictionary)</h3>
+                            <p class="modal-subtitle">ವಿಶೇಷ ತಾಂತ್ರಿಕ ಪದಗಳು ಮತ್ತು ಸಂಕ್ಷೇಪಣಗಳ ಉಚ್ಚಾರಣೆ ಕಸ್ಟಮೈಸ್ ಮಾಡಿ</p>
+                        </div>
+                    </div>
+                    <button id="closeDictModalBtn" class="icon-btn-close" title="Close">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
-                <div class="history-list" id="historyList"></div>
+
+                <!-- Add New Entry Form -->
+                <div class="dict-add-box">
+                    <h4 class="dict-add-title">➕ ಹೊಸ ಉಚ್ಚಾರಣೆ ಸೇರಿಸಿ (Add Custom Word / Acronym)</h4>
+                    <form id="addDictForm" class="dict-form-grid" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="dictNewKey">ಇಂಗ್ಲಿಷ್ ಪದ (Word/Token)</label>
+                            <input type="text" id="dictNewKey" placeholder="e.g. MDR, cashback, AI" autocomplete="off" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dictNewValue">ಕನ್ನಡ ಉಚ್ಚಾರಣೆ (Phonetic)</label>
+                            <input type="text" id="dictNewValue" placeholder="e.g. ಎಂ ಡಿ ಆರ್, ಕ್ಯಾಶ್‌ಬ್ಯಾಕ್" autocomplete="off" required>
+                        </div>
+                        <div class="form-group type-group">
+                            <label for="dictNewType">ವಿಧ (Type)</label>
+                            <select id="dictNewType">
+                                <option value="word">ಪದ (Word)</option>
+                                <option value="acronym">ಸಂಕ್ಷೇಪಣ (Acronym)</option>
+                            </select>
+                        </div>
+                        <div class="form-group btn-group">
+                            <label>&nbsp;</label>
+                            <button type="button" id="addDictEntryBtn" class="btn btn-save-dict">
+                                <span>ಉಳಿಸಿ (Save)</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filter & Tabs Bar -->
+                <div class="dict-toolbar">
+                    <div class="dict-tabs">
+                        <button id="dictTabWords" class="dict-tab active">
+                            <span>ತಾಂತ್ರಿಕ ಪದಗಳು (Words)</span>
+                            <span id="dictWordsCountBadge" class="tab-count-badge">0</span>
+                        </button>
+                        <button id="dictTabAcronyms" class="dict-tab">
+                            <span>ಸಂಕ್ಷೇಪಣಗಳು (Acronyms)</span>
+                            <span id="dictAcronymsCountBadge" class="tab-count-badge">0</span>
+                        </button>
+                    </div>
+                    <div class="dict-search-wrap">
+                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="dictSearchInput" placeholder="ಹುಡುಕಿ (Filter)...">
+                    </div>
+                </div>
+
+                <!-- Dictionary Entries List -->
+                <div id="dictEntriesList" class="dict-entries-list"></div>
+                
+                <div class="dict-footer">
+                    <span id="dictTotalMeta" class="dict-meta-text">ಒಟ್ಟು 0 ನಮೂದುಗಳು</span>
+                    <span class="dict-info-hint">💡 ಬದಲಾವಣೆಗಳು ತಕ್ಷಣವೇ ಅನ್ವಯವಾಗುತ್ತವೆ</span>
+                </div>
             </div>
         </div>
 
@@ -482,6 +561,6 @@
         <div id="toast" class="toast hidden"></div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=3.2"></script>
 </body>
 </html>
