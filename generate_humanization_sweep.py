@@ -54,7 +54,7 @@ MDR_TEST_SCRIPT = (
 )
 
 VOICE = "kn-IN-GaganNeural"
-SAMPLE_RATE = 24000
+SAMPLE_RATE = 22050
 RESULTS_DIR = Path(__file__).parent / "results"
 ARTIFACT_DIR = Path("/Users/karthiku/.gemini/antigravity/brain/e94a0d7b-eb69-45f8-864e-a491bfffa395")
 
@@ -73,7 +73,7 @@ def mp3_to_pcm(mp3_path: str, wav_path: str, sr: int = SAMPLE_RATE) -> np.ndarra
     """Convert mp3 -> WAV -> float32 PCM using afconvert or ffmpeg."""
     if shutil.which("afconvert"):
         subprocess.run(
-            ["afconvert", "-f", "WAVE", "-d", "LEI16@24000", "-c", "1", mp3_path, wav_path],
+            ["afconvert", "-f", "WAVE", "-d", f"LEI16@{sr}", "-c", "1", mp3_path, wav_path],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
         )
     elif shutil.which("ffmpeg"):

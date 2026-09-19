@@ -124,7 +124,7 @@ class AcousticVoiceCloner:
             )
 
             out_buf = io.BytesIO()
-            out_seg.export(out_buf, format="mp3", bitrate="192k")
+            out_seg.export(out_buf, format="mp3", bitrate="128k")
             out_buf.seek(0)
             return out_buf.read()
 

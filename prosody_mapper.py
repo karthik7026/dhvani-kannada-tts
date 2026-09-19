@@ -113,6 +113,10 @@ DEFAULT_HUMANIZATION_STRENGTH = float(os.getenv("HUMANIZATION_STRENGTH", "0.0"))
 MAX_ADJACENT_PITCH_DELTA_HZ: int = int(os.getenv("MAX_ADJACENT_PITCH_DELTA_HZ", "14"))
 MAX_ADJACENT_RATE_DELTA_PCT: int = int(os.getenv("MAX_ADJACENT_RATE_DELTA_PCT", "10"))
 
+# Default audio output format: 22kHz sample rate, 128k bitrate
+DEFAULT_SAMPLE_RATE: int = int(os.getenv("DEFAULT_SAMPLE_RATE", "22050"))
+DEFAULT_BITRATE: str = os.getenv("DEFAULT_BITRATE", "128k")
+
 # Connector delimiters for natural breathing boundaries (excludes 'ಮತ್ತು' to preserve compound phrases)
 CONNECTOR_DELIMS = re.compile(r'([,;:—–]+|\s+ಆದರೆ\s+|\s+ಆದ್ದರಿಂದ\s+|\s+ಆದಾಗ್ಯೂ\s+)', re.UNICODE)
 
@@ -154,7 +158,7 @@ def _bounded(value: int, lower: str, upper: str) -> int:
 def _parse_edge_value(value: str) -> int:
     return int(value.replace("Hz", "").replace("%", "").replace("+", ""))
 
-def trim_silence_pcm(samples: np.ndarray, sr: int = 24000, thresh_db: float = -42.0, pad_ms: int = 24) -> np.ndarray:
+def trim_silence_pcm(samples: np.ndarray, sr: int = DEFAULT_SAMPLE_RATE, thresh_db: float = -42.0, pad_ms: int = 24) -> np.ndarray:
     """
     Trims leading and trailing silence from Edge-TTS generated audio chunk,
     leaving a conservative 24ms safety margin to preserve natural phonetic onset
@@ -182,7 +186,7 @@ def trim_silence_pcm(samples: np.ndarray, sr: int = 24000, thresh_db: float = -4
     end_idx = min(len(samples), above[-1] + pad_samples)
     return samples[start_idx:end_idx]
 
-def apply_broadcast_mastering(pcm_data: np.ndarray, sr: int = 24000, punch: float = 1.45) -> np.ndarray:
+def apply_broadcast_mastering(pcm_data: np.ndarray, sr: int = DEFAULT_SAMPLE_RATE, punch: float = 1.35) -> np.ndarray:
     """
     Applies professional vocal mastering:
     1. 3.2kHz Peaking EQ (+3.5 dB vocal presence boost for speech intelligibility)
@@ -705,6 +709,8 @@ class KannadaProsodyMapper:
         semantic_direction: bool = True,
         semantic_prosody_strength: float = DEFAULT_SEMANTIC_PROSODY_STRENGTH,
         humanization_strength: float = DEFAULT_HUMANIZATION_STRENGTH,
+        sample_rate: int = DEFAULT_SAMPLE_RATE,
+        bitrate: str = DEFAULT_BITRATE,
     ) -> Tuple[bytes, Dict[str, Any]]:
         """
         Synthesizes Kannada text with expressive reference delivery while
@@ -723,7 +729,7 @@ class KannadaProsodyMapper:
         actual_voice = "kn-IN-GaganNeural" if ("gagan" in voice.lower() or "male" in voice.lower()) else "kn-IN-SapnaNeural"
 
         # 3. Target phrase length based on reference breath-group
-        target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 12)
+        target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 32)
         phrases = cls.segment_kannada_text(speech_text, target_aksharas=target_aksharas)
 
         if not phrases:
@@ -756,7 +762,7 @@ class KannadaProsodyMapper:
         temp_dir = tempfile.mkdtemp(prefix="dhvani_delivery_")
         pcm_chunks = []
         applied_plan = []
-        sr = 24000
+        sr = sample_rate
 
         try:
             for idx, (p_info, delivery) in enumerate(zip(valid_phrases, smoothed_deliveries)):
@@ -776,9 +782,9 @@ class KannadaProsodyMapper:
                     )
                     await communicate.save(mp3_path)
                     if shutil.which("afconvert"):
-                        subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@24000", "-c", "1", mp3_path, wav_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                        subprocess.run(["afconvert", "-f", "WAVE", "-d", f"LEI16@{sr}", "-c", "1", mp3_path, wav_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                     elif shutil.which("ffmpeg"):
-                        subprocess.run(["ffmpeg", "-y", "-i", mp3_path, "-ac", "1", "-ar", "24000", wav_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                        subprocess.run(["ffmpeg", "-y", "-i", mp3_path, "-ac", "1", "-ar", str(sr), wav_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                     with wave.open(wav_path, "rb") as wf:
                         raw = wf.readframes(wf.getnframes())
                         data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
@@ -805,7 +811,7 @@ class KannadaProsodyMapper:
             combined_audio = np.concatenate(pcm_chunks)
 
             # 4. Broadcast Audio Mastering (EQ Presence Boost + Dynamic Punch Saturation + Peak Normalization)
-            energy_punch = prosody_profile.get("energy_and_punch", {}).get("energy_punch", 1.45)
+            energy_punch = prosody_profile.get("energy_and_punch", {}).get("energy_punch", 1.35)
             mastered_audio = apply_broadcast_mastering(combined_audio, sr=sr, punch=energy_punch)
             out_int16 = (mastered_audio * 32767).astype(np.int16)
 
@@ -821,7 +827,7 @@ class KannadaProsodyMapper:
             if shutil.which("ffmpeg"):
                 out_mp3_path = os.path.join(temp_dir, "combined.mp3")
                 try:
-                    subprocess.run(["ffmpeg", "-y", "-i", out_wav_path, "-b:a", "192k", out_mp3_path],
+                    subprocess.run(["ffmpeg", "-y", "-i", out_wav_path, "-b:a", bitrate, "-ar", str(sr), out_mp3_path],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                     final_audio_path = out_mp3_path
                 except Exception:
@@ -838,13 +844,15 @@ class KannadaProsodyMapper:
                 "energy_mode": energy_mode,
                 "applied_plan": applied_plan,
                 "transformations_applied": len(transforms),
-                "overall_pace": prosody_profile.get("speaking_rate", {}).get("pace_syl_sec", 8.5),
+                "overall_pace": prosody_profile.get("speaking_rate", {}).get("pace_syl_sec", 5.6),
                 "dynamic_punch": round(energy_punch, 2),
                 "speech_director": SpeechDirector.status(),
                 "semantic_direction": semantic_direction,
                 "semantic_prosody_strength": max(0.0, min(1.0, float(semantic_prosody_strength))) if semantic_direction else 0.0,
                 "humanization_strength": max(0.0, min(1.0, float(humanization_strength))),
                 "prosody_limits": PROSODY_LIMITS,
+                "sample_rate": sr,
+                "bitrate": bitrate,
                 "duration_sec": round(len(out_int16) / sr, 2)
             }
 

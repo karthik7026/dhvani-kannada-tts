@@ -128,7 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
         energyMode: "high_energy",
         pitchDepth: 1.0,
         pacingMultiplier: 1.0,
-        pauseStyle: "snappy"
+        pauseStyle: "snappy",
+        sampleRate: 22050,
+        bitrate: "128k"
     };
 
     // Audio Player Bar
@@ -586,6 +588,8 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append("pacing_multiplier", deliveryState.pacingMultiplier);
             formData.append("pause_style", deliveryState.pauseStyle);
             formData.append("semantic_direction", semanticDirection);
+            formData.append("sample_rate", deliveryState.sampleRate || 22050);
+            formData.append("bitrate", deliveryState.bitrate || "128k");
 
             const res = await fetch(apiUrl("/api/synthesize_delivery"), {
                 method: "POST",

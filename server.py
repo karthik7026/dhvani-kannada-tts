@@ -330,6 +330,8 @@ async def synthesize_delivery_endpoint(
     semantic_direction: bool = Form(True),
     semantic_prosody_strength: float = Form(DEFAULT_SEMANTIC_PROSODY_STRENGTH),
     humanization_strength: float = Form(0.0),
+    sample_rate: int = Form(22050),
+    bitrate: str = Form("128k"),
     profile_json: Optional[str] = Form(None),
     reference_audio: Optional[UploadFile] = File(None)
 ):
@@ -365,6 +367,8 @@ async def synthesize_delivery_endpoint(
             semantic_direction=semantic_direction,
             semantic_prosody_strength=semantic_prosody_strength,
             humanization_strength=humanization_strength,
+            sample_rate=sample_rate,
+            bitrate=bitrate,
         )
 
         SYNTHESIS_HISTORY.append({
@@ -392,6 +396,8 @@ async def synthesize_delivery_endpoint(
                     "semantic_direction": meta.get("semantic_direction"),
                     "semantic_prosody_strength": meta.get("semantic_prosody_strength"),
                     "humanization_strength": meta.get("humanization_strength", 0.0),
+                    "sample_rate": meta.get("sample_rate", 22050),
+                    "bitrate": meta.get("bitrate", "128k"),
                     "applied_plan": meta.get("applied_plan")
                 }, ensure_ascii=True)
             }
