@@ -26,16 +26,48 @@ except ImportError:
         @staticmethod
         def normalize(t): return t
 
-# Built-in expressive delivery, measured from the high-energy reference presenter recording.
-# Controls prosody only: no speaker timbre/embedding is modified.
+# Measured baseline delivery profile from the high-energy reference presenter video.
+# Filters out video editing/B-roll cuts and models distinct speech bursts, pitch dynamics,
+# and pause distributions.
 BUILTIN_EXPRESSIVE_PROFILE: Dict[str, Any] = {
-    "profile_id": "builtin_expressive_v2",
-    "speaking_rate": {"pace_syl_sec": 8.5, "pace_multiplier": 1.45, "tempo_category": "Fast Presenter"},
-    "pitch_dynamics": {"median_hz": 187.5, "range_hz": 78.3, "span_semitones": 7.34, "ending_slope": "neutral_cadence"},
-    "pauses": {"count": 57, "median_ms": 130.0, "p90_ms": 680.0, "pause_ratio_pct": 49.2,
-               "distribution": {"short_pct": 71.9, "medium_pct": 14.0, "long_pct": 14.0}},
-    "energy_and_punch": {"crest_factor_db": 25.3, "energy_punch": 1.44, "transition_contrast": "High Dynamic Range"},
-    "phrasing": {"target_phrase_aksharas": 16, "median_breath_sec": 0.07, "p90_breath_sec": 0.19},
+    "profile_id": "youtube_presenter_v3",
+    "pitch_dynamics": {
+        "mean_hz": 162.1,
+        "median_hz": 157.1,
+        "p10_hz": 123.3,
+        "p90_hz": 206.2,
+        "pitch_movement_hz": 82.9,
+        "span_semitones": 8.92,
+        "ending_slope": "punchy_falling"
+    },
+    "speaking_rate": {
+        "pace_syl_sec": 8.5,
+        "pace_multiplier": 1.45,
+        "burst_rate_syl_sec": 8.5,
+        "speech_activity_ratio_pct": 45.5,
+        "tempo_category": "Ultra-Fast Presenter"
+    },
+    "pauses": {
+        "detected_pauses_count": 575,
+        "raw_median_ms": 448.0,
+        "raw_p90_sec": 1.12,
+        "short_breath_ms": 80,
+        "sentence_boundary_ms": 190,
+        "dramatic_emphasis_ms": 450,
+        "video_cut_filter_active": True
+    },
+    "energy_and_punch": {
+        "mean_rms_db": -23.9,
+        "energy_dynamic_range_db": 26.3,
+        "crest_factor_db": 24.8,
+        "energy_punch": 1.45,
+        "transition_contrast": "High Dynamic Range"
+    },
+    "phrasing": {
+        "target_phrase_aksharas": 14,
+        "median_breath_sec": 0.08,
+        "p90_breath_sec": 0.22
+    }
 }
 
 def count_aksharas(text: str) -> int:
@@ -206,54 +238,168 @@ class KannadaProsodyMapper:
         profile: Dict[str, Any],
         base_voice: str,
         phrase_index: int = 0,
-        total_phrases: int = 1
-    ) -> Tuple[str, str, int]:
+        total_phrases: int = 1,
+        energy_mode: str = "high_energy",
+        pitch_depth: float = 1.0,
+        pacing_multiplier: float = 1.0,
+        pause_style: str = "snappy"
+    ) -> Tuple[str, str, int, str]:
         """
         Maps reference prosody stats into expressive, dynamic Edge-TTS controls.
-        Applies dramatic pitch swings, fast presenter pacing, and crisp breath pauses.
+        Supports real-time energy section modes, pitch excursion depth, and pause styling.
         """
         rate_info = profile.get("speaking_rate", {})
-        pace_multiplier = rate_info.get("pace_multiplier", 1.35)
+        base_pace_mult = rate_info.get("pace_multiplier", 1.35) * pacing_multiplier
 
-        # Base presenter rate: +28% to +38% for lively YouTube/Podcast tempo
-        base_rate = int(max(26.0, min(38.0, (pace_multiplier - 1.0) * 80.0 + 6.0)))
+        # Energy Mode Profiles
+        energy_offsets = {
+            "calm": {"rate_delta": -12, "pitch_scale": 0.6, "pause_mult": 1.3, "tag": "Calm Narrator"},
+            "balanced": {"rate_delta": 0, "pitch_scale": 0.85, "pause_mult": 1.1, "tag": "Balanced Explainer"},
+            "high_energy": {"rate_delta": 8, "pitch_scale": 1.0, "pause_mult": 0.9, "tag": "High-Energy Presenter"},
+            "dramatic": {"rate_delta": 14, "pitch_scale": 1.35, "pause_mult": 1.4, "tag": "Dramatic Climax"}
+        }
+        cfg = energy_offsets.get(energy_mode, energy_offsets["high_energy"])
 
-        # Dynamic pitch variation based on phrase context
+        # Base presenter rate: +26% to +44%
+        base_rate = int(max(18.0, min(44.0, (base_pace_mult - 1.0) * 80.0 + cfg["rate_delta"])))
+
+        # Pause style baselines
+        if pause_style == "snappy":
+            base_short_pause = 75
+            base_sentence_pause = 180
+            base_dramatic_pause = 380
+        elif pause_style == "dramatic":
+            base_short_pause = 140
+            base_sentence_pause = 300
+            base_dramatic_pause = 600
+        else: # balanced
+            base_short_pause = 100
+            base_sentence_pause = 240
+            base_dramatic_pause = 450
+
+        p_scale = pitch_depth * cfg["pitch_scale"]
+
+        # Dynamic pitch & rhythm variation based on phrase context
         if phrase.get("is_question"):
-            # Strong rising inflection for rhetorical questions (+18Hz to +22Hz)
-            phrase_pitch_hz = 18 if "gagan" in base_voice.lower() else 22
-            applied_rate = min(42, base_rate + 6)
-            pause_ms = 180
+            # Strong rising inflection for rhetorical questions (+18Hz to +24Hz)
+            pitch_hz = int(round((18 if "gagan" in base_voice.lower() else 22) * p_scale))
+            applied_rate = min(44, base_rate + 6)
+            pause_ms = int(base_sentence_pause * cfg["pause_mult"])
+            tag = "❓ Rhetorical Question Rise"
         elif phrase.get("is_exclamation"):
             # Energetic assertion / punch (+14Hz to +18Hz)
-            phrase_pitch_hz = 14 if "gagan" in base_voice.lower() else 18
-            applied_rate = min(40, base_rate + 4)
-            pause_ms = 190
+            pitch_hz = int(round((14 if "gagan" in base_voice.lower() else 18) * p_scale))
+            applied_rate = min(42, base_rate + 4)
+            pause_ms = int(base_sentence_pause * cfg["pause_mult"])
+            tag = "📢 Exclamatory Assertion"
         elif phrase.get("is_sentence_end"):
             # Punchy falling termination (-10Hz to -14Hz)
-            phrase_pitch_hz = -12 if "gagan" in base_voice.lower() else -8
+            pitch_hz = int(round((-12 if "gagan" in base_voice.lower() else -8) * p_scale))
             applied_rate = base_rate
-            pause_ms = 200
+            pause_ms = int(base_sentence_pause * cfg["pause_mult"])
+            tag = "💥 Punchy Falling Cadence"
         else:
             # Rhythmic alternating cadence across continuing clauses
             if phrase_index % 2 == 0:
-                phrase_pitch_hz = 8 if "gagan" in base_voice.lower() else 10
+                pitch_hz = int(round((8 if "gagan" in base_voice.lower() else 10) * p_scale))
                 applied_rate = base_rate + 3
+                tag = "⚡ Rising Clause Build-Up"
             else:
-                phrase_pitch_hz = -2 if "gagan" in base_voice.lower() else 0
+                pitch_hz = int(round((-2 if "gagan" in base_voice.lower() else 0) * p_scale))
                 applied_rate = base_rate - 2
-            pause_ms = 80
+                tag = "🌊 Melodic Clause Flow"
+            pause_ms = int(base_short_pause * cfg["pause_mult"])
 
         rate_str = f"+{applied_rate}%" if applied_rate >= 0 else f"{applied_rate}%"
-        pitch_str = f"+{phrase_pitch_hz}Hz" if phrase_pitch_hz >= 0 else f"{phrase_pitch_hz}Hz"
+        pitch_str = f"+{pitch_hz}Hz" if pitch_hz >= 0 else f"{pitch_hz}Hz"
 
-        return rate_str, pitch_str, pause_ms
+        return rate_str, pitch_str, pause_ms, tag
+
+    @classmethod
+    def get_realtime_prosody_plan(
+        cls,
+        kannada_text: str,
+        voice: str = "kn-IN-GaganNeural",
+        energy_mode: str = "high_energy",
+        pitch_depth: float = 1.0,
+        pacing_multiplier: float = 1.0,
+        pause_style: str = "snappy",
+        prosody_profile: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Generates real-time segmented phrase blocks with live applied pitch, rate, and pause metadata.
+        """
+        if prosody_profile is None:
+            prosody_profile = BUILTIN_EXPRESSIVE_PROFILE
+
+        norm_text = KannadaNormalizer.normalize(kannada_text.strip())
+        actual_voice = "kn-IN-GaganNeural" if ("gagan" in voice.lower() or "male" in voice.lower()) else "kn-IN-SapnaNeural"
+        target_aksharas = prosody_profile.get("phrasing", {}).get("target_phrase_aksharas", 14)
+        phrases = cls.segment_kannada_text(norm_text, target_aksharas=target_aksharas)
+
+        if not phrases:
+            phrases = [{"text": norm_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "punct": ".", "pause_type": "long"}]
+
+        plan = []
+        total_estimated_ms = 0
+
+        for idx, p_info in enumerate(phrases):
+            phrase_text = p_info["text"]
+            if not phrase_text:
+                continue
+
+            rate_str, pitch_str, pause_ms, tag = cls.calculate_phrase_parameters(
+                p_info, prosody_profile, actual_voice,
+                phrase_index=idx, total_phrases=len(phrases),
+                energy_mode=energy_mode, pitch_depth=pitch_depth,
+                pacing_multiplier=pacing_multiplier, pause_style=pause_style
+            )
+
+            akshara_count = count_aksharas(phrase_text)
+            # Estimate speech duration based on pace
+            speed_val = (100 + int(rate_str.replace('%', ''))) / 100.0
+            speech_ms = int((akshara_count / max(3.5, 7.5 * speed_val)) * 1000)
+            total_estimated_ms += speech_ms + pause_ms
+
+            plan.append({
+                "phrase_index": idx + 1,
+                "text": phrase_text,
+                "aksharas": akshara_count,
+                "pitch": pitch_str,
+                "rate": rate_str,
+                "pause_after_ms": pause_ms,
+                "tag": tag,
+                "estimated_duration_sec": round(speech_ms / 1000.0, 2)
+            })
+
+        return {
+            "voice": actual_voice,
+            "energy_mode": energy_mode,
+            "pitch_depth": pitch_depth,
+            "pacing_multiplier": pacing_multiplier,
+            "pause_style": pause_style,
+            "total_phrases": len(plan),
+            "estimated_total_sec": round(total_estimated_ms / 1000.0, 2),
+            "baseline_metrics": {
+                "mean_pitch_hz": prosody_profile["pitch_dynamics"].get("mean_hz", 162.1),
+                "median_pitch_hz": prosody_profile["pitch_dynamics"].get("median_hz", 157.1),
+                "pitch_movement_hz": prosody_profile["pitch_dynamics"].get("pitch_movement_hz", 82.9),
+                "mean_rms_db": prosody_profile["energy_and_punch"].get("mean_rms_db", -23.9),
+                "dynamic_range_db": prosody_profile["energy_and_punch"].get("energy_dynamic_range_db", 26.3),
+                "burst_rate_syl_sec": prosody_profile["speaking_rate"].get("burst_rate_syl_sec", 8.5)
+            },
+            "phrases": plan
+        }
 
     @classmethod
     async def synthesize_with_delivery_style(
         cls,
         kannada_text: str,
         voice: str = "kn-IN-GaganNeural",
+        energy_mode: str = "high_energy",
+        pitch_depth: float = 1.0,
+        pacing_multiplier: float = 1.0,
+        pause_style: str = "snappy",
         prosody_profile: Optional[Dict[str, Any]] = None
     ) -> Tuple[bytes, Dict[str, Any]]:
         """
@@ -289,8 +435,11 @@ class KannadaProsodyMapper:
                 if not phrase_text:
                     continue
 
-                rate_str, pitch_str, pause_ms = cls.calculate_phrase_parameters(
-                    p_info, prosody_profile, actual_voice, phrase_index=idx, total_phrases=len(phrases)
+                rate_str, pitch_str, pause_ms, tag = cls.calculate_phrase_parameters(
+                    p_info, prosody_profile, actual_voice,
+                    phrase_index=idx, total_phrases=len(phrases),
+                    energy_mode=energy_mode, pitch_depth=pitch_depth,
+                    pacing_multiplier=pacing_multiplier, pause_style=pause_style
                 )
 
                 mp3_path = os.path.join(temp_dir, f"chunk_{idx:03d}.mp3")
@@ -330,7 +479,8 @@ class KannadaProsodyMapper:
                     "phrase": phrase_text,
                     "pitch": pitch_str,
                     "rate": rate_str,
-                    "pause_after_ms": pause_ms
+                    "pause_after_ms": pause_ms,
+                    "tag": tag
                 })
 
             if not pcm_chunks:
@@ -340,7 +490,7 @@ class KannadaProsodyMapper:
             combined_audio = np.concatenate(pcm_chunks)
 
             # 4. Broadcast Audio Mastering (EQ Presence Boost + Dynamic Punch Saturation + Peak Normalization)
-            energy_punch = prosody_profile.get("energy_and_punch", {}).get("energy_punch", 1.35)
+            energy_punch = prosody_profile.get("energy_and_punch", {}).get("energy_punch", 1.45)
             mastered_audio = apply_broadcast_mastering(combined_audio, sr=sr, punch=energy_punch)
             out_int16 = (mastered_audio * 32767).astype(np.int16)
 
@@ -368,6 +518,7 @@ class KannadaProsodyMapper:
             metadata = {
                 "voice_used": actual_voice,
                 "phrase_count": len(phrases),
+                "energy_mode": energy_mode,
                 "applied_plan": applied_plan,
                 "overall_pace": prosody_profile.get("speaking_rate", {}).get("pace_syl_sec", 8.5),
                 "dynamic_punch": round(energy_punch, 2),

@@ -207,22 +207,61 @@
                 <div id="deliveryTransferPanel" class="mode-panel hidden">
                     <div class="delivery-hero-box">
                         <div class="hero-title">
-                            <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (Expressive Kannada Voices)</span>
+                            <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (YouTube Presenter Delivery Transfer)</span>
                         </div>
                         <p class="hero-desc">
-                            ಯಾವುದೇ ಫೈಲ್ ಅಪ್‌ಲೋಡ್ ಅಗತ್ಯವಿಲ್ಲ. Gagan ಅಥವಾ Sapna ಆಯ್ಕೆ ಮಾಡಿ; ಸ್ಟುಡಿಯೋ ಅವರ ಅಂತರ್ನಿರ್ಮಿತ ಕನ್ನಡ ನರ-ಧ್ವನಿಗೆ ಸ್ವಾಭಾವಿಕ ವೇಗ, ವಿರಾಮ ಮತ್ತು ಎನರ್ಜಿ ಹೊಂದಿಸುತ್ತದೆ.
+                            ಯೂಟ್ಯೂಬ್ ಪ್ರಸ್ತುತಿಕಾರರ ರಿಯಲ್-ಟೈಮ್ ಅಕೌಸ್ಟಿಕ್ ಪ್ರೊಫೈಲ್. ಯಾವುದೇ ಕನ್ನಡ ಪಠ್ಯಕ್ಕೂ ಸ್ವಾಭಾವಿಕ ಪಿಚ್ ಸ್ವಿಂಗ್ (~೮೩ Hz), ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್ (೮.೫ syl/s), ಮತ್ತು ಸ್ನ್ಯಾಪಿ ವಿರಾಮಗಳನ್ನು ರಿಯಲ್-ಟೈಮ್‌ನಲ್ಲಿ ಅನ್ವಯಿಸುತ್ತದೆ.
                         </p>
                     </div>
 
-                    <!-- Speaker Identity Selector (Strictly Gagan or Sapna) -->
+                    <!-- 1. Live Acoustic Profiler Metrics Dashboard -->
+                    <div class="acoustic-stats-grid">
+                        <div class="metric-box">
+                            <div class="metric-icon">📈</div>
+                            <div class="metric-data">
+                                <span class="metric-label">ಪಿಚ್ ಶ್ರುತಿ ಚಲನೆ (Pitch Excursion)</span>
+                                <span class="metric-val" id="metricPitchSpan">~82.9 Hz</span>
+                                <span class="metric-sub">Median: 157.1 Hz (123 - 206 Hz)</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">⚡</div>
+                            <div class="metric-data">
+                                <span class="metric-label">ಎನರ್ಜಿ ರೇಂಜ್ (Dynamic Range)</span>
+                                <span class="metric-val" id="metricEnergyRange">26.3 dB</span>
+                                <span class="metric-sub">Mean RMS: -23.9 dB (High Dynamic)</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">⏱️</div>
+                            <div class="metric-data">
+                                <span class="metric-label">ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್ (Burst Pace)</span>
+                                <span class="metric-val" id="metricBurstPace">8.5 syl/sec</span>
+                                <span class="metric-sub">ಅಲ್ಟ್ರಾ-ಫಾಸ್ಟ್ ಪ್ರಸ್ತುತಿಕಾರರ ವೇಗ</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-box">
+                            <div class="metric-icon">⏸️</div>
+                            <div class="metric-data">
+                                <span class="metric-label">ವಿರಾಮ ಫಿಲ್ಟರ್ (Smart Pauses)</span>
+                                <span class="metric-val" id="metricPauses">80ms / 190ms</span>
+                                <span class="metric-sub">ವೀಡಿಯೊ ಕಟ್‌ಗಳು ಆಟೋ-ಫಿಲ್ಟರ್ ಆಗಿದೆ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Speaker Voice Identity -->
                     <div class="section-block">
-                        <label class="section-label">👤 ಅಂತರ್ನಿರ್ಮಿತ ಕನ್ನಡ ಧ್ವನಿ (Built-in Voice)</label>
+                        <label class="section-label">👤 ಮೂಲ ನರ-ಧ್ವನಿ (Speaker Voice Identity)</label>
                         <div class="identity-picker-row">
                             <button id="pickGaganBtn" class="identity-card active" data-voice="kn-IN-GaganNeural">
                                 <span class="id-icon">👨‍💼</span>
                                 <div class="id-text">
                                     <span class="id-name">Gagan (ಗಗನ್)</span>
-                                    <span class="id-sub">ಗಂಡು ಧ್ವನಿ • ಸ್ಪಷ್ಟ, ಉತ್ಸಾಹದ ವಾಚನ</span>
+                                    <span class="id-sub">ಗಂಡು ಧ್ವನಿ • ೧೦೦% ನೈಜ ಗುರುತು</span>
                                 </div>
                                 <span class="id-check">✓</span>
                             </button>
@@ -230,17 +269,72 @@
                                 <span class="id-icon">👩‍💼</span>
                                 <div class="id-text">
                                     <span class="id-name">Sapna (ಸ್ಪಪ್ನಾ)</span>
-                                    <span class="id-sub">ಹೆಣ್ಣು ಧ್ವನಿ • ಮಧುರ, ಅಭಿವ್ಯಕ್ತಿಯ ವಾಚನ</span>
+                                    <span class="id-sub">ಹೆಣ್ಣು ಧ್ವನಿ • ೧೦೦% ನೈಜ ಗುರುತು</span>
                                 </div>
                                 <span class="id-check">✓</span>
                             </button>
                         </div>
                     </div>
 
+                    <!-- 3. Real-Time Interactive Delivery Controllers -->
+                    <div class="section-block delivery-controls-card">
+                        <label class="section-label">🎛️ ರಿಯಲ್-ಟೈಮ್ ಅಟ್ರಿಬ್ಯೂಟ್ ನಿಯಂತ್ರಕಗಳು (Real-Time Prosody Modifiers)</label>
+                        
+                        <!-- Energy Section Mode Chips -->
+                        <div class="control-subgroup">
+                            <span class="control-subtitle">🔥 ಎನರ್ಜಿ ಮೋಡ್ (Presenter Energy Section)</span>
+                            <div class="chips-row" id="energyModeChips">
+                                <button class="chip-btn" data-energy="calm">🍃 ಶಾಂತ (Calm)</button>
+                                <button class="chip-btn" data-energy="balanced">⚖️ ಸಮತೋಲಿತ (Balanced)</button>
+                                <button class="chip-btn active" data-energy="high_energy">🔥 ಹೈ-ಎನರ್ಜಿ (High-Energy)</button>
+                                <button class="chip-btn" data-energy="dramatic">⚡ ಕ್ಲೈಮ್ಯಾಕ್ಸ್ (Dramatic)</button>
+                            </div>
+                        </div>
+
+                        <!-- Pitch Excursion Depth Slider -->
+                        <div class="slider-row">
+                            <div class="slider-header">
+                                <span class="slider-title">ಪಿಚ್ ಶ್ರುತಿ ಸ್ವಿಂಗ್ (Pitch Excursion Depth)</span>
+                                <span id="pitchDepthVal" class="slider-badge">1.0x (~83 Hz)</span>
+                            </div>
+                            <input type="range" id="pitchDepthSlider" min="0.5" max="2.0" value="1.0" step="0.1">
+                        </div>
+
+                        <!-- Burst Pacing Slider -->
+                        <div class="slider-row">
+                            <div class="slider-header">
+                                <span class="slider-title">ಸ್ಪೀಕಿಂಗ್ ಬರ್ಸ್ಟ್ ವೇಗ (Burst Pace / Speed)</span>
+                                <span id="burstPaceVal" class="slider-badge">8.5 syl/s (+38%)</span>
+                            </div>
+                            <input type="range" id="burstPaceSlider" min="0.8" max="1.5" value="1.0" step="0.05">
+                        </div>
+
+                        <!-- Pause Style Chips -->
+                        <div class="control-subgroup">
+                            <span class="control-subtitle">⏸️ ವಿರಾಮ ಶೈಲಿ (Pause Timing Style)</span>
+                            <div class="chips-row" id="pauseStyleChips">
+                                <button class="chip-btn active" data-pause="snappy">⚡ ಸ್ನ್ಯಾಪಿ (75ms/180ms)</button>
+                                <button class="chip-btn" data-pause="balanced">⚖️ ಸಮತೋಲಿತ (100ms/240ms)</button>
+                                <button class="chip-btn" data-pause="dramatic">🎭 ನಾಟಕೀಯ (140ms/380ms)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Live Real-Time Phrase Breakdown Visualizer -->
+                    <div class="section-block live-phrases-box">
+                        <div class="live-phrases-header">
+                            <label class="section-label">🔍 ಲೈವ್ ಫ್ರೇಸ್ ವಿಶ್ಲೇಷಣೆ (Real-Time Phrase Breakdown)</label>
+                            <span id="livePhrasesCount" class="badge-count">0 ವಾಕ್ಯಖಂಡಗಳು</span>
+                        </div>
+                        <div id="livePhraseContainer" class="live-phrase-list">
+                            <div class="empty-phrase-hint">ಪಠ್ಯವನ್ನು ಟೈಪ್ ಮಾಡಿದಂತೆ ಇಲ್ಲಿ ರಿಯಲ್-ಟೈಮ್‌ನಲ್ಲಿ ಫ್ರೇಸ್‌ಗಳು ಪ್ರದರ್ಶನಗೊಳ್ಳುತ್ತವೆ...</div>
+                        </div>
+                    </div>
+
                     <!-- Generate Styled Audio Button -->
                     <button id="generateStyledBtn" class="btn btn-generate-styled">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ ರಚಿಸಿ (Create Expressive Audio)</span>
+                        <span>⚡ ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ ರಚಿಸಿ (Synthesize Expressive Audio)</span>
                     </button>
 
                     <!-- A/B Comparison Switcher -->

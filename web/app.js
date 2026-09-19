@@ -77,6 +77,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const playNormalABBtn = document.getElementById("playNormalABBtn");
     const playStyledABBtn = document.getElementById("playStyledABBtn");
 
+    // Real-Time Delivery Modifiers
+    const energyModeChips = document.querySelectorAll("#energyModeChips .chip-btn");
+    const pitchDepthSlider = document.getElementById("pitchDepthSlider");
+    const pitchDepthVal = document.getElementById("pitchDepthVal");
+    const burstPaceSlider = document.getElementById("burstPaceSlider");
+    const burstPaceVal = document.getElementById("burstPaceVal");
+    const pauseStyleChips = document.querySelectorAll("#pauseStyleChips .chip-btn");
+    const livePhrasesCount = document.getElementById("livePhrasesCount");
+    const livePhraseContainer = document.getElementById("livePhraseContainer");
+
+    // Real-Time Modifier State
+    const deliveryState = {
+        energyMode: "high_energy",
+        pitchDepth: 1.0,
+        pacingMultiplier: 1.0,
+        pauseStyle: "snappy"
+    };
+
     // Audio Player Bar
     const audioPlayer = document.getElementById("audioPlayer");
     const playBtn = document.getElementById("playBtn");
@@ -133,6 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
         standardTTSPanel.classList.add("hidden");
         indicF5Panel.classList.add("hidden");
         updateStatusMeta("Expressive Voice", "ಅಂತರ್ನಿರ್ಮಿತ ಶೈಲಿ");
+        updateLivePhraseBreakdown();
     });
 
     tabIndicF5.addEventListener("click", () => {
@@ -173,6 +192,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         clearTimeout(window._normTimeout);
         window._normTimeout = setTimeout(fetchNormalization, 250);
+
+        clearTimeout(window._phraseTimeout);
+        window._phraseTimeout = setTimeout(updateLivePhraseBreakdown, 200);
     }
 
     async function fetchNormalization() {
@@ -347,6 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
         state.voice = "kn-IN-GaganNeural";
         invalidateGeneratedAudio();
         updateStatusMeta();
+        updateLivePhraseBreakdown();
         showToast("ಧ್ವನಿ: Gagan (ಗಗನ್) ಆಯ್ಕೆಯಾಗಿದೆ");
     });
 
@@ -356,10 +379,108 @@ document.addEventListener("DOMContentLoaded", () => {
         state.voice = "kn-IN-SapnaNeural";
         invalidateGeneratedAudio();
         updateStatusMeta();
+        updateLivePhraseBreakdown();
         showToast("ಧ್ವನಿ: Sapna (ಸ್ಪಪ್ನಾ) ಆಯ್ಕೆಯಾಗಿದೆ");
     });
 
-    // 5. Synthesize with the built-in expressive Gagan or Sapna preset.
+    // 5a. Real-Time Attribute Modifiers Listeners
+    energyModeChips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            energyModeChips.forEach(c => c.classList.remove("active"));
+            chip.classList.add("active");
+            deliveryState.energyMode = chip.dataset.energy;
+            updateLivePhraseBreakdown();
+            showToast(`ಎನರ್ಜಿ ಮೋಡ್: ${chip.textContent.trim()}`);
+        });
+    });
+
+    if (pitchDepthSlider) {
+        pitchDepthSlider.addEventListener("input", () => {
+            const val = parseFloat(pitchDepthSlider.value);
+            deliveryState.pitchDepth = val;
+            const spanHz = Math.round(82.9 * val);
+            pitchDepthVal.textContent = `${val.toFixed(1)}x (~${spanHz} Hz)`;
+            updateLivePhraseBreakdown();
+        });
+    }
+
+    if (burstPaceSlider) {
+        burstPaceSlider.addEventListener("input", () => {
+            const val = parseFloat(burstPaceSlider.value);
+            deliveryState.pacingMultiplier = val;
+            const sylSec = (8.5 * val).toFixed(1);
+            const deltaPct = Math.round((val * 1.38 - 1.0) * 100);
+            burstPaceVal.textContent = `${sylSec} syl/s (+${deltaPct}%)`;
+            updateLivePhraseBreakdown();
+        });
+    }
+
+    pauseStyleChips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            pauseStyleChips.forEach(c => c.classList.remove("active"));
+            chip.classList.add("active");
+            deliveryState.pauseStyle = chip.dataset.pause;
+            updateLivePhraseBreakdown();
+            showToast(`ವಿರಾಮ ಶೈಲಿ: ${chip.textContent.trim()}`);
+        });
+    });
+
+    // 5b. Real-Time Live Phrase Breakdown Calculator (Applicable to Any Kannada Text)
+    async function updateLivePhraseBreakdown() {
+        const text = kannadaInput.value.trim();
+        if (!text || !livePhraseContainer) return;
+
+        try {
+            const res = await fetch(apiUrl("/api/preview_prosody_plan"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text,
+                    voice: state.voice,
+                    energy_mode: deliveryState.energyMode,
+                    pitch_depth: deliveryState.pitchDepth,
+                    pacing_multiplier: deliveryState.pacingMultiplier,
+                    pause_style: deliveryState.pauseStyle
+                })
+            });
+
+            if (!res.ok) return;
+            const plan = await res.json();
+
+            if (livePhrasesCount) {
+                livePhrasesCount.textContent = `${plan.total_phrases} ವಾಕ್ಯಖಂಡಗಳು (~${plan.estimated_total_sec}s)`;
+            }
+
+            livePhraseContainer.innerHTML = "";
+            if (!plan.phrases || plan.phrases.length === 0) {
+                livePhraseContainer.innerHTML = `<div class="empty-phrase-hint">(ಯಾವುದೇ ಪಠ್ಯವಿಲ್ಲ)</div>`;
+                return;
+            }
+
+            plan.phrases.forEach(p => {
+                const item = document.createElement("div");
+                item.className = "live-phrase-item";
+                item.innerHTML = `
+                    <div class="phrase-left">
+                        <span class="phrase-num">${p.phrase_index}</span>
+                        <span class="phrase-text-preview" title="${p.text}">"${p.text}"</span>
+                    </div>
+                    <div class="phrase-meta-pills">
+                        <span class="pill-tag pill-pitch">${p.pitch}</span>
+                        <span class="pill-tag pill-rate">${p.rate}</span>
+                        <span class="pill-tag pill-pause">${p.pause_after_ms}ms</span>
+                        <span class="pill-tag">${p.tag}</span>
+                    </div>
+                `;
+                livePhraseContainer.appendChild(item);
+            });
+
+        } catch (e) {
+            console.error("Live phrase preview error:", e);
+        }
+    }
+
+    // 5c. Synthesize with current real-time delivery attributes
     generateStyledBtn.addEventListener("click", () => {
         synthesizeDeliveryStyled();
     });
@@ -377,6 +498,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const formData = new FormData();
             formData.append("text", text);
             formData.append("voice", state.voice);
+            formData.append("energy_mode", deliveryState.energyMode);
+            formData.append("pitch_depth", deliveryState.pitchDepth);
+            formData.append("pacing_multiplier", deliveryState.pacingMultiplier);
+            formData.append("pause_style", deliveryState.pauseStyle);
 
             const res = await fetch(apiUrl("/api/synthesize_delivery"), {
                 method: "POST",
@@ -820,4 +945,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Init
     updateTextMetrics();
     updateStatusMeta();
+    updateLivePhraseBreakdown();
+    fetchIndicF5Status();
 });

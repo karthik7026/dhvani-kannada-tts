@@ -232,10 +232,39 @@ async def analyze_delivery_endpoint(reference_audio: UploadFile = File(...)):
     profile["filename"] = reference_audio.filename
     return profile
 
+@app.post("/api/preview_prosody_plan")
+def preview_prosody_plan_endpoint(payload: dict = Body(...)):
+    """
+    Returns real-time phrase segmentation, pitch inflections, burst rates,
+    and pause timings for live UI visualization.
+    """
+    text = payload.get("text", "").strip()
+    voice = payload.get("voice", "kn-IN-GaganNeural")
+    energy_mode = payload.get("energy_mode", "high_energy")
+    pitch_depth = float(payload.get("pitch_depth", 1.0))
+    pacing_multiplier = float(payload.get("pacing_multiplier", 1.0))
+    pause_style = payload.get("pause_style", "snappy")
+    profile = payload.get("profile", None)
+
+    plan = KannadaProsodyMapper.get_realtime_prosody_plan(
+        kannada_text=text,
+        voice=voice,
+        energy_mode=energy_mode,
+        pitch_depth=pitch_depth,
+        pacing_multiplier=pacing_multiplier,
+        pause_style=pause_style,
+        prosody_profile=profile
+    )
+    return plan
+
 @app.post("/api/synthesize_delivery")
 async def synthesize_delivery_endpoint(
     text: str = Form(...),
     voice: str = Form("kn-IN-GaganNeural"),
+    energy_mode: str = Form("high_energy"),
+    pitch_depth: float = Form(1.0),
+    pacing_multiplier: float = Form(1.0),
+    pause_style: str = Form("snappy"),
     profile_json: Optional[str] = Form(None),
     reference_audio: Optional[UploadFile] = File(None)
 ):
@@ -262,6 +291,10 @@ async def synthesize_delivery_endpoint(
         audio_bytes, meta = await KannadaProsodyMapper.synthesize_with_delivery_style(
             kannada_text=text,
             voice=voice,
+            energy_mode=energy_mode,
+            pitch_depth=pitch_depth,
+            pacing_multiplier=pacing_multiplier,
+            pause_style=pause_style,
             prosody_profile=prosody_profile
         )
 
@@ -269,7 +302,7 @@ async def synthesize_delivery_endpoint(
             "id": f"clip_{int(time.time()*1000)}",
             "timestamp": time.strftime("%H:%M:%S"),
             "text": text[:60] + ("..." if len(text) > 60 else ""),
-            "voice": f"{voice} [Delivery Styled]",
+            "voice": f"{voice} [Delivery Styled - {energy_mode.upper()}]",
             "duration": meta.get("duration_sec", 0.0)
         })
 
@@ -284,6 +317,7 @@ async def synthesize_delivery_endpoint(
                     "voice": meta.get("voice_used"),
                     "duration": meta.get("duration_sec"),
                     "phrase_count": meta.get("phrase_count"),
+                    "energy_mode": meta.get("energy_mode"),
                     "overall_pace": meta.get("overall_pace")
                 }, ensure_ascii=True)
             }
