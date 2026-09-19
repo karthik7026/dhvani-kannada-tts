@@ -32,8 +32,24 @@ document.addEventListener("DOMContentLoaded", () => {
     // DOM Elements - Navigation & Modes
     const tabNormalTTS = document.getElementById("tabNormalTTS");
     const tabDeliveryTransfer = document.getElementById("tabDeliveryTransfer");
+    const tabIndicF5 = document.getElementById("tabIndicF5");
     const standardTTSPanel = document.getElementById("standardTTSPanel");
     const deliveryTransferPanel = document.getElementById("deliveryTransferPanel");
+    const indicF5Panel = document.getElementById("indicF5Panel");
+    const indicF5DeviceBadge = document.getElementById("indicF5DeviceBadge");
+
+    // IndicF5 Elements
+    const f5AudioDropzone = document.getElementById("f5AudioDropzone");
+    const f5AudioFileInput = document.getElementById("f5AudioFileInput");
+    const f5DropzonePrompt = document.getElementById("f5DropzonePrompt");
+    const f5LoadedBox = document.getElementById("f5LoadedBox");
+    const f5LoadedFilename = document.getElementById("f5LoadedFilename");
+    const f5LoadedMeta = document.getElementById("f5LoadedMeta");
+    const f5RemoveAudioBtn = document.getElementById("f5RemoveAudioBtn");
+    const f5TranscriptInput = document.getElementById("f5TranscriptInput");
+    const generateF5Btn = document.getElementById("generateF5Btn");
+
+    let f5UploadedFile = null;
 
     // Text Input & Normalizer
     const kannadaInput = document.getElementById("kannadaInput");
@@ -101,8 +117,10 @@ document.addEventListener("DOMContentLoaded", () => {
         state.mode = "standard";
         tabNormalTTS.classList.add("active");
         tabDeliveryTransfer.classList.remove("active");
+        tabIndicF5.classList.remove("active");
         standardTTSPanel.classList.remove("hidden");
         deliveryTransferPanel.classList.add("hidden");
+        indicF5Panel.classList.add("hidden");
         updateStatusMeta();
     });
 
@@ -110,10 +128,36 @@ document.addEventListener("DOMContentLoaded", () => {
         state.mode = "delivery";
         tabDeliveryTransfer.classList.add("active");
         tabNormalTTS.classList.remove("active");
+        tabIndicF5.classList.remove("active");
         deliveryTransferPanel.classList.remove("hidden");
         standardTTSPanel.classList.add("hidden");
+        indicF5Panel.classList.add("hidden");
         updateStatusMeta("Expressive Voice", "ಅಂತರ್ನಿರ್ಮಿತ ಶೈಲಿ");
     });
+
+    tabIndicF5.addEventListener("click", () => {
+        state.mode = "indic_f5";
+        tabIndicF5.classList.add("active");
+        tabNormalTTS.classList.remove("active");
+        tabDeliveryTransfer.classList.remove("active");
+        indicF5Panel.classList.remove("hidden");
+        standardTTSPanel.classList.add("hidden");
+        deliveryTransferPanel.classList.add("hidden");
+        updateStatusMeta("IndicF5 Zero-Shot", "AI4Bharat F5");
+        fetchIndicF5Status();
+    });
+
+    async function fetchIndicF5Status() {
+        try {
+            const res = await fetch(apiUrl("/api/indic_f5/status"));
+            if (res.ok) {
+                const data = await res.json();
+                if (indicF5DeviceBadge) {
+                    indicF5DeviceBadge.textContent = `${data.device.toUpperCase()}`;
+                }
+            }
+        } catch (e) {}
+    }
 
     // ==========================================
     // 2. TEXT METRICS & NORMALIZATION PREVIEW
@@ -409,6 +453,110 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ==========================================
+    // 5d. AI4BHARAT INDICF5 CLONING ACTIONS
+    // ==========================================
+    if (f5AudioDropzone) {
+        f5AudioDropzone.addEventListener("click", (e) => {
+            if (e.target !== f5RemoveAudioBtn) {
+                f5AudioFileInput.click();
+            }
+        });
+
+        f5AudioFileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) handleF5AudioFile(file);
+        });
+
+        f5AudioDropzone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            f5AudioDropzone.classList.add("drag-over");
+        });
+
+        f5AudioDropzone.addEventListener("dragleave", () => {
+            f5AudioDropzone.classList.remove("drag-over");
+        });
+
+        f5AudioDropzone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            f5AudioDropzone.classList.remove("drag-over");
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith("audio/")) {
+                handleF5AudioFile(file);
+            }
+        });
+    }
+
+    function handleF5AudioFile(file) {
+        f5UploadedFile = file;
+        f5LoadedFilename.textContent = file.name;
+        f5LoadedMeta.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB • ರೆಫರೆನ್ಸ್ ಸಿದ್ಧವಾಗಿದೆ`;
+        f5DropzonePrompt.classList.add("hidden");
+        f5LoadedBox.classList.remove("hidden");
+        showToast(`ರೆಫರೆನ್ಸ್ ಕ್ಲಿಪ್ ಲೋಡ್ ಆಗಿದೆ: ${file.name}`);
+    }
+
+    if (f5RemoveAudioBtn) {
+        f5RemoveAudioBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            f5UploadedFile = null;
+            f5AudioFileInput.value = "";
+            f5DropzonePrompt.classList.remove("hidden");
+            f5LoadedBox.classList.add("hidden");
+            showToast("ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ ತೆಗೆದುಹಾಕಲಾಗಿದೆ");
+        });
+    }
+
+    if (generateF5Btn) {
+        generateF5Btn.addEventListener("click", () => {
+            synthesizeIndicF5();
+        });
+    }
+
+    async function synthesizeIndicF5() {
+        const text = kannadaInput.value.trim();
+        if (!text) {
+            showToast("ದಯವಿಟ್ಟು ಪಠ್ಯವನ್ನು ನಮೂದಿಸಿ");
+            return;
+        }
+
+        setPlaybackState("loading");
+
+        try {
+            const formData = new FormData();
+            formData.append("text", text);
+            if (f5TranscriptInput && f5TranscriptInput.value.trim()) {
+                formData.append("ref_transcript", f5TranscriptInput.value.trim());
+            }
+            if (f5UploadedFile) {
+                formData.append("reference_audio", f5UploadedFile);
+            }
+
+            const res = await fetch(apiUrl("/api/indic_f5/synthesize"), {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("IndicF5 synthesis failed");
+
+            const blob = await res.blob();
+            if (state.currentAudioUrl) URL.revokeObjectURL(state.currentAudioUrl);
+            state.currentAudioUrl = URL.createObjectURL(blob);
+
+            audioPlayer.src = state.currentAudioUrl;
+            audioPlayer.playbackRate = state.playbackSpeed;
+            audioPlayer.play();
+
+            setPlaybackState("playing");
+            showToast("🧬 IndicF5 ಧ್ವನಿ ತಯಾರಾಗಿದೆ! ನುಡಿಸಲಾಗುತ್ತಿದೆ...");
+
+        } catch (err) {
+            console.error(err);
+            setPlaybackState("stopped");
+            showToast(`ದೋಷ: ${err.message}`);
+        }
+    }
+
+    // ==========================================
     // 6. SYNTHESIS & PLAYBACK DISPATCHER
     // ==========================================
     playBtn.addEventListener("click", () => {
@@ -419,7 +567,9 @@ document.addEventListener("DOMContentLoaded", () => {
             audioPlayer.play();
             setPlaybackState("playing");
         } else {
-            if (state.mode === "delivery") {
+            if (state.mode === "indic_f5") {
+                synthesizeIndicF5();
+            } else if (state.mode === "delivery") {
                 synthesizeDeliveryStyled();
             } else {
                 synthesizeStandardTTS();

@@ -48,6 +48,11 @@
                 <span class="tab-label">ವ್ಯಕ್ತಿತ್ವದ ಧ್ವನಿ (Expressive Voices)</span>
                 <span class="tab-badge">Built-in</span>
             </button>
+            <button id="tabIndicF5" class="mode-tab">
+                <span class="tab-icon">🧬</span>
+                <span class="tab-label">AI4Bharat IndicF5 (ನರ ಕ್ಲೋನಿಂಗ್)</span>
+                <span class="tab-badge" id="indicF5DeviceBadge">Local GPU</span>
+            </button>
         </div>
 
         <!-- Main Studio Grid -->
@@ -250,6 +255,53 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- MODE 3: AI4BHARAT INDICF5 CLONING PANEL    -->
+                <!-- ========================================== -->
+                <div id="indicF5Panel" class="mode-panel hidden">
+                    <div class="delivery-hero-box">
+                        <div class="hero-title">
+                            <span>🧬 AI4Bharat IndicF5 (Zero-Shot Neural Cloning)</span>
+                        </div>
+                        <p class="hero-desc">
+                            ಐಐಟಿ ಮದ್ರಾಸ್‌ನ IndicF5 ನರ-ಮಾದರಿ (Flow-Matching Diffusion). ಯಾವುದೇ ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ ನೀಡಿ ನೈಜ ಧ್ವನಿಯನ್ನು ಕನ್ನಡಕ್ಕೆ ಕ್ಲೋನ್ ಮಾಡಿ (100% ಲೋಕಲ್, No Colab).
+                        </p>
+                    </div>
+
+                    <div class="section-block">
+                        <label class="section-label">🎙️ ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ (Reference Voice Clip)</label>
+                        <div class="dropzone-box" id="f5AudioDropzone">
+                            <input type="file" id="f5AudioFileInput" accept="audio/*" class="hidden">
+                            <div class="dropzone-content" id="f5DropzonePrompt">
+                                <div class="dropzone-icon">📁</div>
+                                <div class="dropzone-text">
+                                    <span class="main-drop-text">ರೆಫರೆನ್ಸ್ ಆಡಿಯೊ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ ಅಥವಾ ಡ್ರ್ಯಾಗ್ ಮಾಡಿ</span>
+                                    <span class="sub-drop-text">MP3, WAV, M4A (5-15 ಸೆಕೆಂಡುಗಳ ಸ್ಪಷ್ಟ ಧ್ವನಿ ಮಾದರಿ)</span>
+                                </div>
+                            </div>
+                            <div class="dropzone-loaded hidden" id="f5LoadedBox">
+                                <div class="loaded-icon">🎵</div>
+                                <div class="loaded-info">
+                                    <span id="f5LoadedFilename" class="loaded-name">reference.mp3</span>
+                                    <span id="f5LoadedMeta" class="loaded-size">ಕ್ಲಿಪ್ ಲೋಡ್ ಆಗಿದೆ</span>
+                                </div>
+                                <button id="f5RemoveAudioBtn" class="icon-btn" title="Remove Audio">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-block">
+                        <label class="section-label">📝 ರೆಫರೆನ್ಸ್ ಪಠ್ಯ (Reference Transcript - Optional)</label>
+                        <input type="text" id="f5TranscriptInput" class="custom-input" placeholder="ಆಡಿಯೊದಲ್ಲಿರುವ ಪಠ್ಯ (ಉದಾ: ನಮಸ್ಕಾರ, ಎಲ್ಲರಿಗೂ ಸ್ವಾಗತ...)">
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button id="generateF5Btn" class="btn btn-generate-styled">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span>🧬 IndicF5 ಧ್ವನಿ ತಯಾರಿಸಿ (Generate IndicF5 Speech)</span>
+                    </button>
                 </div>
 
             </section>

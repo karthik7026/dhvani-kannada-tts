@@ -27,6 +27,7 @@ from kannada_normalizer import KannadaNormalizer, normalize_kannada_text
 from voice_cloner import AcousticVoiceCloner
 from delivery_profiler import DeliveryProfiler
 from prosody_mapper import KannadaProsodyMapper
+from indic_f5_engine import IndicF5Engine
 
 app = FastAPI(
     title="Dhvani Kannada TTS Studio API",
@@ -290,6 +291,64 @@ async def synthesize_delivery_endpoint(
 
     except Exception as e:
         print(f"Error in synthesize_delivery: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# -------------------------------------------------------------
+# AI4BHARAT INDICF5 LOCAL ZERO-SHOT CLONING ENDPOINTS
+# -------------------------------------------------------------
+
+@app.get("/api/indic_f5/status")
+def indic_f5_status_endpoint():
+    """Returns local IndicF5 model status, device (MPS/CPU), and readiness."""
+    return IndicF5Engine.get_status()
+
+@app.post("/api/indic_f5/synthesize")
+async def indic_f5_synthesize_endpoint(
+    text: str = Form(...),
+    ref_transcript: Optional[str] = Form(None),
+    hf_token: Optional[str] = Form(None),
+    reference_audio: Optional[UploadFile] = File(None)
+):
+    """
+    100% Local Zero-Shot Voice Cloning with AI4Bharat/IndicF5.
+    """
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+
+    ref_audio_bytes = None
+    if reference_audio is not None:
+        ref_audio_bytes = await reference_audio.read()
+
+    try:
+        audio_bytes, meta = await IndicF5Engine.synthesize(
+            kannada_text=text,
+            ref_audio_path_or_bytes=ref_audio_bytes,
+            ref_transcript=ref_transcript,
+            hf_token=hf_token
+        )
+
+        SYNTHESIS_HISTORY.append({
+            "id": f"clip_{int(time.time()*1000)}",
+            "timestamp": time.strftime("%H:%M:%S"),
+            "text": text[:60] + ("..." if len(text) > 60 else ""),
+            "voice": f"IndicF5 Zero-Shot [{meta.get('device', 'cpu').upper()}]",
+            "duration": meta.get("duration_sec", 0.0)
+        })
+
+        media_type = "audio/wav" if audio_bytes.startswith(b"RIFF") else "audio/mpeg"
+        filename = "dhvani_indic_f5.wav" if audio_bytes.startswith(b"RIFF") else "dhvani_indic_f5.mp3"
+
+        return Response(
+            content=audio_bytes,
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "X-IndicF5-Meta": json.dumps(meta, ensure_ascii=True)
+            }
+        )
+
+    except Exception as e:
+        print(f"Error in indic_f5_synthesize: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # -------------------------------------------------------------
