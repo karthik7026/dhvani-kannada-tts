@@ -22,6 +22,7 @@ import numpy as np
 from scipy import signal
 
 from pronunciation_engine import KannadaPronunciationEngine
+from speech_director import SpeechDirector
 
 try:
     from kannada_normalizer import KannadaNormalizer
@@ -90,6 +91,24 @@ FOCUS_PATTERNS = [
 ]
 FOCUS_REGEX = re.compile('|'.join(FOCUS_PATTERNS), re.UNICODE)
 
+# Semantic direction is intentionally bounded here, not delegated to Groq.
+# These are Edge-TTS-safe values that keep a creator delivery natural.
+PROSODY_LIMITS: Dict[str, int] = {
+    "MIN_RATE": -12,
+    "MAX_RATE": 44,
+    "MIN_PITCH": -38,
+    "MAX_PITCH": 42,
+    "MIN_VOLUME": -8,
+    "MAX_VOLUME": 10,
+    "MIN_PAUSE": 80,
+    "MAX_PAUSE": 550,
+}
+
+# Keep Edge TTS in charge of natural sentence intonation. Semantic labels are
+# deliberately a light overlay, configurable per request or deployment.
+DEFAULT_SEMANTIC_PROSODY_STRENGTH = float(os.getenv("SEMANTIC_PROSODY_STRENGTH", "0.18"))
+DEFAULT_HUMANIZATION_STRENGTH = float(os.getenv("HUMANIZATION_STRENGTH", "0.0"))
+
 # Connector delimiters for natural breathing boundaries
 CONNECTOR_DELIMS = re.compile(r'([,;:—–]+|\s+ಮತ್ತು\s+|\s+ಹಾಗೆಯೇ\s+|\s+ಆದರೆ\s+|\s+ಇದರಿಂದ\s+|\s+ಅಲ್ಲದೆ\s+|\s+ಆದ್ದರಿಂದ\s+|\s+ಈಗ\s+|\s+ನೋಡಿ\s+)', re.UNICODE)
 
@@ -115,6 +134,21 @@ def count_aksharas(text: str) -> int:
 def has_focus_entity(text: str) -> bool:
     """Detects whether a phrase contains a focus entity, number, superlative, or proper noun."""
     return bool(FOCUS_REGEX.search(text))
+
+def focus_words(text: str) -> List[str]:
+    """Return a small, deduplicated set of words eligible for local emphasis."""
+    seen = []
+    for match in FOCUS_REGEX.finditer(text):
+        word = match.group(0).strip()
+        if word and word not in seen:
+            seen.append(word)
+    return seen[:2]
+
+def _bounded(value: int, lower: str, upper: str) -> int:
+    return max(PROSODY_LIMITS[lower], min(PROSODY_LIMITS[upper], int(value)))
+
+def _parse_edge_value(value: str) -> int:
+    return int(value.replace("Hz", "").replace("%", "").replace("+", ""))
 
 def trim_silence_pcm(samples: np.ndarray, sr: int = 24000, thresh_db: float = -38.0, pad_ms: int = 8) -> np.ndarray:
     """
@@ -274,7 +308,8 @@ class KannadaProsodyMapper:
         energy_mode: str = "high_energy",
         pitch_depth: float = 1.0,
         pacing_multiplier: float = 1.0,
-        pause_style: str = "snappy"
+        pause_style: str = "snappy",
+        direction: Optional[Dict[str, Any]] = None
     ) -> Tuple[str, str, int, str]:
         """
         Maps reference prosody stats into expressive, dynamic Edge-TTS controls.
@@ -365,10 +400,131 @@ class KannadaProsodyMapper:
             pause_ms = int(base_anticipation_pause * cfg["pause_mult"])
             tag = "📈 Anticipation Build-Up"
 
+        applied_rate = _bounded(applied_rate, "MIN_RATE", "MAX_RATE")
+        pitch_hz = _bounded(pitch_hz, "MIN_PITCH", "MAX_PITCH")
+        pause_ms = _bounded(pause_ms, "MIN_PAUSE", "MAX_PAUSE")
         rate_str = f"+{applied_rate}%" if applied_rate >= 0 else f"{applied_rate}%"
         pitch_str = f"+{pitch_hz}Hz" if pitch_hz >= 0 else f"{pitch_hz}Hz"
 
         return rate_str, pitch_str, pause_ms, tag
+
+    @classmethod
+    def get_phrase_delivery(
+        cls,
+        phrase: Dict[str, Any],
+        profile: Dict[str, Any],
+        base_voice: str,
+        phrase_index: int,
+        total_phrases: int,
+        energy_mode: str,
+        pitch_depth: float,
+        pacing_multiplier: float,
+        pause_style: str,
+        direction: Optional[Dict[str, Any]],
+        semantic_direction: bool = True,
+        semantic_prosody_strength: float = DEFAULT_SEMANTIC_PROSODY_STRENGTH,
+        humanization_strength: float = 0.0,
+        has_previous_phrase: bool = False,
+    ) -> Dict[str, Any]:
+        """Build inspectable, safe delivery controls for one phrase with optional humanization."""
+        active_direction = direction if semantic_direction else None
+        strength = max(0.0, min(1.0, float(semantic_prosody_strength))) if semantic_direction else 0.0
+        h_strength = max(0.0, min(1.0, float(humanization_strength)))
+
+        rate, pitch, legacy_pause, tag = cls.calculate_phrase_parameters(
+            phrase, profile, base_voice, phrase_index, total_phrases,
+            energy_mode, pitch_depth, pacing_multiplier, pause_style, active_direction,
+        )
+        rate_value, pitch_value = _parse_edge_value(rate), _parse_edge_value(pitch)
+        intent = active_direction.get("intent", "baseline") if active_direction else "baseline"
+        volume, pause_before, pause_after = 0, 0, legacy_pause
+
+        # A semantic label is only a small hint. It never forces a contour,
+        # creates a new boundary, or changes an entire sentence into a new style.
+        deltas = {
+            "hook": (8, 10, 4, 35),
+            "explanation": (-4, -4, 1, 15),
+            "emphasize": (-7, 8, 5, 55),
+            "question": (-3, 7, 2, 60),
+            "conclusion": (-5, -7, 1, 80),
+            "contrast": (-6, 6, 3, 70),
+            "continuation": (2, -2, 0, -20),
+            "baseline": (0, 0, 0, 0),
+        }
+        rate_delta, pitch_delta, volume_delta, pause_delta = deltas.get(intent, (0, 0, 0, 0))
+        rate_value += round(rate_delta * strength)
+        pitch_value += round(pitch_delta * strength)
+        volume = round(volume_delta * strength)
+        pause_before = 0
+        pause_after += round(pause_delta * strength)
+
+        # Humanization Layer: subtle conversational timing, contextual phrase endings,
+        # and breath-group pause sizing around the baseline (0.0 = pure baseline).
+        if h_strength > 0.0:
+            # 1. Conversational Timing Variation:
+            # - Focal thoughts and numbers are slightly more deliberate
+            # - Simple connecting clauses flow slightly quicker
+            if phrase.get("has_focus") or intent in ("emphasize", "contrast"):
+                rate_value -= round(10 * h_strength)
+            elif intent == "continuation" or not phrase.get("is_sentence_end"):
+                rate_value += round(8 * h_strength)
+            elif intent == "hook":
+                rate_value += round(5 * h_strength)
+
+            # 2. Contextual Phrase Ending Variation:
+            if phrase.get("is_sentence_end"):
+                is_last_phrase = (phrase_index == total_phrases - 1)
+                if phrase.get("is_question") or intent == "question":
+                    # Question ending: anticipatory rising inflection
+                    pitch_value += round(16 * h_strength)
+                    pause_after += round(35 * h_strength)
+                elif is_last_phrase or intent == "conclusion":
+                    # Paragraph conclusion: authoritative grounding
+                    pitch_value -= round(6 * h_strength)
+                    pause_after += round(50 * h_strength)
+                elif intent == "contrast":
+                    # Contrast ending: attentive transition
+                    pitch_value += round(8 * h_strength)
+                    pause_after += round(30 * h_strength)
+                else:
+                    # Intermediate sentence continuation: gentle decay into next sentence
+                    pitch_value += round(10 * h_strength)
+                    pause_after = max(280, pause_after - round(70 * h_strength))
+            else:
+                # Mid-sentence breath group: smooth natural continuation
+                pause_after = max(140, min(pause_after, int(220 - 30 * h_strength)))
+
+            # 3. Contrast Pre-Pause
+            if intent == "contrast" and has_previous_phrase:
+                pause_before = round(45 * h_strength)
+
+        rate_value = _bounded(rate_value, "MIN_RATE", "MAX_RATE")
+        pitch_value = _bounded(pitch_value, "MIN_PITCH", "MAX_PITCH")
+        volume = _bounded(volume, "MIN_VOLUME", "MAX_VOLUME")
+        pause_before = max(0, min(200, pause_before))
+        pause_after = _bounded(pause_after, "MIN_PAUSE", "MAX_PAUSE")
+        emphasis_words = focus_words(phrase["text"]) if intent == "emphasize" else []
+        profile_name = profile.get("profile_id", "uploaded reference profile")
+        profile_influence = f"{profile_name}; pace {profile.get('speaking_rate', {}).get('pace_multiplier', 1.0):.2f}x"
+        return {
+            "rate": f"+{rate_value}%" if rate_value >= 0 else f"{rate_value}%",
+            "pitch": f"+{pitch_value}Hz" if pitch_value >= 0 else f"{pitch_value}Hz",
+            "volume": f"+{volume}%" if volume >= 0 else f"{volume}%",
+            "pause_before_ms": pause_before,
+            "pause_after_ms": pause_after,
+            "intent": intent,
+            "tag": tag,
+            "emphasis_words": emphasis_words,
+            "reference_profile_influence": profile_influence,
+            "direction_source": active_direction.get("source", "disabled") if active_direction else "disabled",
+            "semantic_prosody_strength": strength,
+            "humanization_strength": h_strength,
+        }
+
+    @staticmethod
+    def synthesis_segments(text: str, baseline: Dict[str, Any], directed: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Preserve full phrase context; Edge TTS sounds best with complete phrases."""
+        return [{"text": text, "delivery": directed, "kind": "full_phrase"}]
 
     @classmethod
     def get_realtime_prosody_plan(
@@ -379,7 +535,10 @@ class KannadaProsodyMapper:
         pitch_depth: float = 1.0,
         pacing_multiplier: float = 1.0,
         pause_style: str = "snappy",
-        prosody_profile: Optional[Dict[str, Any]] = None
+        prosody_profile: Optional[Dict[str, Any]] = None,
+        semantic_direction: bool = True,
+        semantic_prosody_strength: float = DEFAULT_SEMANTIC_PROSODY_STRENGTH,
+        humanization_strength: float = DEFAULT_HUMANIZATION_STRENGTH,
     ) -> Dict[str, Any]:
         """
         Generates real-time segmented phrase blocks with live applied pitch, rate, and pause metadata.
@@ -396,6 +555,10 @@ class KannadaProsodyMapper:
         if not phrases:
             phrases = [{"text": speech_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "has_focus": has_focus_entity(speech_text), "punct": ".", "pause_type": "long"}]
 
+        # Preview always remains instant and deterministic; synthesis may replace
+        # this with Groq's equivalent semantic classification when configured.
+        direction_plan = SpeechDirector.local_plan(phrases)
+
         plan = []
         total_estimated_ms = 0
 
@@ -404,26 +567,25 @@ class KannadaProsodyMapper:
             if not phrase_text:
                 continue
 
-            rate_str, pitch_str, pause_ms, tag = cls.calculate_phrase_parameters(
-                p_info, prosody_profile, actual_voice,
-                phrase_index=idx, total_phrases=len(phrases),
-                energy_mode=energy_mode, pitch_depth=pitch_depth,
-                pacing_multiplier=pacing_multiplier, pause_style=pause_style
+            delivery = cls.get_phrase_delivery(
+                p_info, prosody_profile, actual_voice, idx, len(phrases),
+                energy_mode, pitch_depth, pacing_multiplier, pause_style,
+                direction_plan[idx], semantic_direction,
+                semantic_prosody_strength=semantic_prosody_strength,
+                humanization_strength=humanization_strength,
+                has_previous_phrase=idx > 0,
             )
 
             akshara_count = count_aksharas(phrase_text)
-            speed_val = (100 + int(rate_str.replace('%', ''))) / 100.0
+            speed_val = (100 + _parse_edge_value(delivery["rate"])) / 100.0
             speech_ms = int((akshara_count / max(3.5, 7.5 * speed_val)) * 1000)
-            total_estimated_ms += speech_ms + pause_ms
+            total_estimated_ms += speech_ms + delivery["pause_before_ms"] + delivery["pause_after_ms"]
 
             plan.append({
                 "phrase_index": idx + 1,
                 "text": phrase_text,
                 "aksharas": akshara_count,
-                "pitch": pitch_str,
-                "rate": rate_str,
-                "pause_after_ms": pause_ms,
-                "tag": tag,
+                **delivery,
                 "estimated_duration_sec": round(speech_ms / 1000.0, 2)
             })
 
@@ -435,6 +597,10 @@ class KannadaProsodyMapper:
             "pitch_depth": pitch_depth,
             "pacing_multiplier": pacing_multiplier,
             "pause_style": pause_style,
+            "semantic_direction": semantic_direction,
+            "semantic_prosody_strength": max(0.0, min(1.0, float(semantic_prosody_strength))) if semantic_direction else 0.0,
+            "humanization_strength": max(0.0, min(1.0, float(humanization_strength))),
+            "prosody_limits": PROSODY_LIMITS,
             "total_phrases": len(plan),
             "transformations_applied": len(transforms),
             "estimated_total_sec": round(total_estimated_ms / 1000.0, 2),
@@ -458,7 +624,10 @@ class KannadaProsodyMapper:
         pitch_depth: float = 1.0,
         pacing_multiplier: float = 1.0,
         pause_style: str = "snappy",
-        prosody_profile: Optional[Dict[str, Any]] = None
+        prosody_profile: Optional[Dict[str, Any]] = None,
+        semantic_direction: bool = True,
+        semantic_prosody_strength: float = DEFAULT_SEMANTIC_PROSODY_STRENGTH,
+        humanization_strength: float = DEFAULT_HUMANIZATION_STRENGTH,
     ) -> Tuple[bytes, Dict[str, Any]]:
         """
         Synthesizes Kannada text with expressive reference delivery while
@@ -483,6 +652,9 @@ class KannadaProsodyMapper:
         if not phrases:
             phrases = [{"text": speech_text, "is_sentence_end": True, "is_question": False, "is_exclamation": False, "has_focus": has_focus_entity(speech_text), "punct": ".", "pause_type": "long"}]
 
+        # Direction is optional; the local plan is always available as a safe fallback.
+        direction_plan = await SpeechDirector.direct(phrases) if semantic_direction else SpeechDirector.local_plan(phrases)
+
         temp_dir = tempfile.mkdtemp(prefix="dhvani_delivery_")
         pcm_chunks = []
         applied_plan = []
@@ -494,52 +666,49 @@ class KannadaProsodyMapper:
                 if not phrase_text:
                     continue
 
-                rate_str, pitch_str, pause_ms, tag = cls.calculate_phrase_parameters(
-                    p_info, prosody_profile, actual_voice,
-                    phrase_index=idx, total_phrases=len(phrases),
-                    energy_mode=energy_mode, pitch_depth=pitch_depth,
-                    pacing_multiplier=pacing_multiplier, pause_style=pause_style
+                delivery = cls.get_phrase_delivery(
+                    p_info, prosody_profile, actual_voice, idx, len(phrases),
+                    energy_mode, pitch_depth, pacing_multiplier, pause_style,
+                    direction_plan[idx], semantic_direction,
+                    semantic_prosody_strength=semantic_prosody_strength,
+                    humanization_strength=humanization_strength,
+                    has_previous_phrase=idx > 0,
                 )
 
-                mp3_path = os.path.join(temp_dir, f"chunk_{idx:03d}.mp3")
-                wav_path = os.path.join(temp_dir, f"chunk_{idx:03d}.wav")
+                if delivery["pause_before_ms"]:
+                    pcm_chunks.append(np.zeros(int((delivery["pause_before_ms"] / 1000.0) * sr), dtype=np.float32))
 
-                communicate = edge_tts.Communicate(
-                    text=phrase_text,
-                    voice=actual_voice,
-                    pitch=pitch_str,
-                    rate=rate_str
-                )
-                await communicate.save(mp3_path)
+                local_segments = cls.synthesis_segments(phrase_text, delivery, delivery)
+                for segment_index, segment in enumerate(local_segments):
+                    mp3_path = os.path.join(temp_dir, f"chunk_{idx:03d}_{segment_index}.mp3")
+                    wav_path = os.path.join(temp_dir, f"chunk_{idx:03d}_{segment_index}.wav")
+                    controls = segment["delivery"]
+                    communicate = edge_tts.Communicate(
+                        text=segment["text"], voice=actual_voice,
+                        pitch=controls["pitch"], rate=controls["rate"], volume=controls["volume"],
+                    )
+                    await communicate.save(mp3_path)
+                    if shutil.which("afconvert"):
+                        subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@24000", "-c", "1", mp3_path, wav_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                    elif shutil.which("ffmpeg"):
+                        subprocess.run(["ffmpeg", "-y", "-i", mp3_path, "-ac", "1", "-ar", "24000", wav_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                    with wave.open(wav_path, "rb") as wf:
+                        raw = wf.readframes(wf.getnframes())
+                        data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+                    pcm_chunks.append(trim_silence_pcm(data, sr=sr, thresh_db=-38.0, pad_ms=8))
+                    if segment_index < len(local_segments) - 1:
+                        pcm_chunks.append(np.zeros(int(0.11 * sr), dtype=np.float32))
 
-                # Convert to PCM wav using afconvert (macOS) or ffmpeg
-                if shutil.which("afconvert"):
-                    subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@24000", "-c", "1", mp3_path, wav_path],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-                elif shutil.which("ffmpeg"):
-                    subprocess.run(["ffmpeg", "-y", "-i", mp3_path, "-ac", "1", "-ar", "24000", wav_path],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-
-                with wave.open(wav_path, "rb") as wf:
-                    raw = wf.readframes(wf.getnframes())
-                    data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-
-                # Silence trimming on each phrase
-                trimmed_data = trim_silence_pcm(data, sr=sr, thresh_db=-38.0, pad_ms=8)
-                pcm_chunks.append(trimmed_data)
-
-                # Breath pause insertion between phrases
+                # Meaningful phrase pause insertion; timing follows semantic intent.
                 if idx < len(phrases) - 1:
-                    pause_samples = int((pause_ms / 1000.0) * sr)
+                    pause_samples = int((delivery["pause_after_ms"] / 1000.0) * sr)
                     silence = np.zeros(pause_samples, dtype=np.float32)
                     pcm_chunks.append(silence)
 
                 applied_plan.append({
-                    "phrase": phrase_text,
-                    "pitch": pitch_str,
-                    "rate": rate_str,
-                    "pause_after_ms": pause_ms,
-                    "tag": tag
+                    "text": phrase_text,
+                    **delivery,
+                    "emphasis_segments": [{"text": s["text"], "kind": s["kind"]} for s in local_segments],
                 })
 
             if not pcm_chunks:
@@ -584,6 +753,11 @@ class KannadaProsodyMapper:
                 "transformations_applied": len(transforms),
                 "overall_pace": prosody_profile.get("speaking_rate", {}).get("pace_syl_sec", 8.5),
                 "dynamic_punch": round(energy_punch, 2),
+                "speech_director": SpeechDirector.status(),
+                "semantic_direction": semantic_direction,
+                "semantic_prosody_strength": max(0.0, min(1.0, float(semantic_prosody_strength))) if semantic_direction else 0.0,
+                "humanization_strength": max(0.0, min(1.0, float(humanization_strength))),
+                "prosody_limits": PROSODY_LIMITS,
                 "duration_sec": round(len(out_int16) / sr, 2)
             }
 

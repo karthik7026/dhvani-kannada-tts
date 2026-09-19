@@ -1,0 +1,890 @@
+[
+  {
+    "name": "humanization_00_baseline",
+    "strength": 0.0,
+    "file": "results/humanization_00_baseline.wav",
+    "size_bytes": 686268,
+    "phrases": [
+      {
+        "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+        "rate": "+21%",
+        "pitch": "+39Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 330,
+        "intent": "emphasize",
+        "tag": "🎯 Focus Entity Gravitas",
+        "emphasis_words": [
+          "ಸಾವಿರ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 266,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 266,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+        "rate": "+29%",
+        "pitch": "-31Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 503,
+        "intent": "explanation",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 266,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 266,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+        "rate": "+44%",
+        "pitch": "+14Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 186,
+        "intent": "continuation",
+        "tag": "⚡ Fast Setup Burst",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 266,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 266,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+        "rate": "+29%",
+        "pitch": "-29Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 510,
+        "intent": "emphasize",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [
+          "ಲಕ್ಷ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.0,
+        "emphasis_segments": [
+          {
+            "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "humanization_05",
+    "strength": 0.05,
+    "file": "results/humanization_05.wav",
+    "size_bytes": 666932,
+    "phrases": [
+      {
+        "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+        "rate": "+21%",
+        "pitch": "+39Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 218,
+        "intent": "emphasize",
+        "tag": "🎯 Focus Entity Gravitas",
+        "emphasis_words": [
+          "ಸಾವಿರ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 218,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 218,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+        "rate": "+29%",
+        "pitch": "-31Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 499,
+        "intent": "explanation",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 218,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 218,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+        "rate": "+44%",
+        "pitch": "+14Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 186,
+        "intent": "continuation",
+        "tag": "⚡ Fast Setup Burst",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 218,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+        "rate": "+42%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 218,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+        "rate": "+29%",
+        "pitch": "-29Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 512,
+        "intent": "emphasize",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [
+          "ಲಕ್ಷ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.05,
+        "emphasis_segments": [
+          {
+            "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "humanization_10",
+    "strength": 0.1,
+    "file": "results/humanization_10.wav",
+    "size_bytes": 665976,
+    "phrases": [
+      {
+        "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+        "rate": "+20%",
+        "pitch": "+39Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 217,
+        "intent": "emphasize",
+        "tag": "🎯 Focus Entity Gravitas",
+        "emphasis_words": [
+          "ಸಾವಿರ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 217,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 217,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+        "rate": "+29%",
+        "pitch": "-30Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 496,
+        "intent": "explanation",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 217,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 217,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+        "rate": "+44%",
+        "pitch": "+14Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 186,
+        "intent": "continuation",
+        "tag": "⚡ Fast Setup Burst",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 217,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 217,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+        "rate": "+28%",
+        "pitch": "-30Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 515,
+        "intent": "emphasize",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [
+          "ಲಕ್ಷ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.1,
+        "emphasis_segments": [
+          {
+            "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "humanization_15",
+    "strength": 0.15,
+    "file": "results/humanization_15.wav",
+    "size_bytes": 666108,
+    "phrases": [
+      {
+        "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+        "rate": "+19%",
+        "pitch": "+39Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 215,
+        "intent": "emphasize",
+        "tag": "🎯 Focus Entity Gravitas",
+        "emphasis_words": [
+          "ಸಾವಿರ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ನಾವು ಸಾವಿರ ರೂಪಾಯಿ ಡಿಜಿಟಲ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 215,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ಪೇಮೆಂಟ್ ಮಾಡಿದಾಗ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 215,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ವ್ಯಾಪಾರಿ ಒಂದು ಪರ್ಸೆಂಟ್ ಎಂ ಡಿ ಆರ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+        "rate": "+29%",
+        "pitch": "-29Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 493,
+        "intent": "explanation",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ಕಡಿತಗೊಳಿಸುತ್ತಾನೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 215,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ದಿನಾಂಕ ಹದಿನೈದು ಆಗಸ್ಟ್ ಹತ್ತೊಂಬೈನೂರ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 215,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ನಲವತ್ತೇಳು ರಂದು ಆರಂಭವಾದ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+        "rate": "+44%",
+        "pitch": "+14Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 186,
+        "intent": "continuation",
+        "tag": "⚡ Fast Setup Burst",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ಈ ಪದ್ಧತಿಯು ಇಂದು ಯೂಟ್ಯೂಬ್",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 215,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ಚಾಟ್ ಜಿಪಿಟಿ ನಂತಹ ಎ ಐ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+        "rate": "+43%",
+        "pitch": "+26Hz",
+        "volume": "+0%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 215,
+        "intent": "continuation",
+        "tag": "📈 Anticipation Build-Up",
+        "emphasis_words": [],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ತಂತ್ರಜ್ಞಾನಗಳ ಮೂಲಕ",
+            "kind": "full_phrase"
+          }
+        ]
+      },
+      {
+        "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+        "rate": "+27%",
+        "pitch": "-30Hz",
+        "volume": "+1%",
+        "pause_before_ms": 0,
+        "pause_after_ms": 518,
+        "intent": "emphasize",
+        "tag": "💥 Authoritative Cadence Fall",
+        "emphasis_words": [
+          "ಲಕ್ಷ"
+        ],
+        "reference_profile_influence": "youtube_presenter_v3; pace 1.45x",
+        "direction_source": "local",
+        "semantic_prosody_strength": 0.18,
+        "humanization_strength": 0.15,
+        "emphasis_segments": [
+          {
+            "text": "ಲಕ್ಷಾಂತರ ಜನರಿಗೆ ತಲುಪಿದೆ",
+            "kind": "full_phrase"
+          }
+        ]
+      }
+    ]
+  }
+]

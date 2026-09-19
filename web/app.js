@@ -518,7 +518,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     energy_mode: deliveryState.energyMode,
                     pitch_depth: deliveryState.pitchDepth,
                     pacing_multiplier: deliveryState.pacingMultiplier,
-                    pause_style: deliveryState.pauseStyle
+                    pause_style: deliveryState.pauseStyle,
+                    semantic_direction: true
                 })
             });
 
@@ -546,7 +547,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="phrase-meta-pills">
                         <span class="pill-tag pill-pitch">${p.pitch}</span>
                         <span class="pill-tag pill-rate">${p.rate}</span>
-                        <span class="pill-tag pill-pause">${p.pause_after_ms}ms</span>
+                        <span class="pill-tag pill-pause">↳ ${p.pause_after_ms}ms</span>
+                        ${p.pause_before_ms ? `<span class="pill-tag">↱ ${p.pause_before_ms}ms</span>` : ''}
+                        <span class="pill-tag">${p.intent}</span>
+                        <span class="pill-tag">${p.volume || '+0%'}</span>
+                        ${p.emphasis_words?.length ? `<span class="pill-tag">🎯 ${p.emphasis_words.join(', ')}</span>` : ''}
                         <span class="pill-tag">${p.tag}</span>
                     </div>
                 `;
@@ -563,7 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
         synthesizeDeliveryStyled();
     });
 
-    async function synthesizeDeliveryStyled() {
+    async function synthesizeDeliveryStyled(semanticDirection = true) {
         const text = kannadaInput.value.trim();
         if (!text) {
             showToast("ದಯವಿಟ್ಟು ಪಠ್ಯವನ್ನು ನಮೂದಿಸಿ");
@@ -580,6 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append("pitch_depth", deliveryState.pitchDepth);
             formData.append("pacing_multiplier", deliveryState.pacingMultiplier);
             formData.append("pause_style", deliveryState.pauseStyle);
+            formData.append("semantic_direction", semanticDirection);
 
             const res = await fetch(apiUrl("/api/synthesize_delivery"), {
                 method: "POST",
@@ -589,9 +595,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.ok) throw new Error("Delivery synthesis failed");
 
             const blob = await res.blob();
-            if (state.styledAudioUrl) URL.revokeObjectURL(state.styledAudioUrl);
-            state.styledAudioUrl = URL.createObjectURL(blob);
-            state.currentAudioUrl = state.styledAudioUrl;
+            const targetKey = semanticDirection ? "styledAudioUrl" : "baselineDeliveryAudioUrl";
+            if (state[targetKey]) URL.revokeObjectURL(state[targetKey]);
+            state[targetKey] = URL.createObjectURL(blob);
+            state.currentAudioUrl = state[targetKey];
 
             audioPlayer.src = state.currentAudioUrl;
             audioPlayer.playbackRate = state.playbackSpeed;
@@ -599,10 +606,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setPlaybackState("playing");
             abComparisonBox.classList.remove("hidden");
-            playStyledABBtn.classList.add("active");
-            playNormalABBtn.classList.remove("active");
+            playStyledABBtn.classList.toggle("active", semanticDirection);
+            playNormalABBtn.classList.toggle("active", !semanticDirection);
 
-            showToast("ಶೈಲಿ ವರ್ಗಾವಣೆಯೊಂದಿಗೆ ನುಡಿಸಲಾಗುತ್ತಿದೆ (Delivery Styled Playing)!");
+            showToast(semanticDirection ? "Semantic Delivery Styled Playing!" : "Baseline Expressive Playing!");
 
         } catch (err) {
             console.error(err);
@@ -616,28 +623,16 @@ document.addEventListener("DOMContentLoaded", () => {
         playNormalABBtn.classList.add("active");
         playStyledABBtn.classList.remove("active");
 
-        // Synthesize normal if not cached
-        if (!state.normalAudioUrl) {
-            setPlaybackState("loading");
-            const res = await fetch(apiUrl("/api/synthesize"), {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    text: kannadaInput.value.trim(),
-                    voice: state.voice,
-                    pitch: "+0Hz",
-                    rate: "+0%"
-                })
-            });
-            const blob = await res.blob();
-            state.normalAudioUrl = URL.createObjectURL(blob);
+        // A uses the identical expressive pipeline, except semantic direction.
+        if (!state.baselineDeliveryAudioUrl) {
+            await synthesizeDeliveryStyled(false);
+            return;
         }
-
-        state.currentAudioUrl = state.normalAudioUrl;
+        state.currentAudioUrl = state.baselineDeliveryAudioUrl;
         audioPlayer.src = state.currentAudioUrl;
         audioPlayer.play();
         setPlaybackState("playing");
-        showToast("🔊 Normal Voice ನುಡಿಸಲಾಗುತ್ತಿದೆ");
+        showToast("🔊 Baseline Expressive ನುಡಿಸಲಾಗುತ್ತಿದೆ");
     });
 
     playStyledABBtn.addEventListener("click", () => {

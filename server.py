@@ -28,8 +28,9 @@ from pronunciation_engine import KannadaPronunciationEngine, normalize_kannada_t
 from kannada_normalizer import KannadaNormalizer
 from voice_cloner import AcousticVoiceCloner
 from delivery_profiler import DeliveryProfiler
-from prosody_mapper import KannadaProsodyMapper
+from prosody_mapper import KannadaProsodyMapper, DEFAULT_SEMANTIC_PROSODY_STRENGTH
 from indic_f5_engine import IndicF5Engine
+from speech_director import SpeechDirector
 
 app = FastAPI(
     title="Dhvani Kannada TTS Studio API",
@@ -299,6 +300,9 @@ def preview_prosody_plan_endpoint(payload: dict = Body(...)):
     pitch_depth = float(payload.get("pitch_depth", 1.0))
     pacing_multiplier = float(payload.get("pacing_multiplier", 1.0))
     pause_style = payload.get("pause_style", "snappy")
+    semantic_direction = bool(payload.get("semantic_direction", True))
+    semantic_prosody_strength = float(payload.get("semantic_prosody_strength", DEFAULT_SEMANTIC_PROSODY_STRENGTH))
+    humanization_strength = float(payload.get("humanization_strength", 0.0))
     profile = payload.get("profile", None)
 
     plan = KannadaProsodyMapper.get_realtime_prosody_plan(
@@ -308,7 +312,10 @@ def preview_prosody_plan_endpoint(payload: dict = Body(...)):
         pitch_depth=pitch_depth,
         pacing_multiplier=pacing_multiplier,
         pause_style=pause_style,
-        prosody_profile=profile
+        prosody_profile=profile,
+        semantic_direction=semantic_direction,
+        semantic_prosody_strength=semantic_prosody_strength,
+        humanization_strength=humanization_strength,
     )
     return plan
 
@@ -320,6 +327,9 @@ async def synthesize_delivery_endpoint(
     pitch_depth: float = Form(1.0),
     pacing_multiplier: float = Form(1.0),
     pause_style: str = Form("snappy"),
+    semantic_direction: bool = Form(True),
+    semantic_prosody_strength: float = Form(DEFAULT_SEMANTIC_PROSODY_STRENGTH),
+    humanization_strength: float = Form(0.0),
     profile_json: Optional[str] = Form(None),
     reference_audio: Optional[UploadFile] = File(None)
 ):
@@ -351,7 +361,10 @@ async def synthesize_delivery_endpoint(
             pitch_depth=pitch_depth,
             pacing_multiplier=pacing_multiplier,
             pause_style=pause_style,
-            prosody_profile=prosody_profile
+            prosody_profile=prosody_profile,
+            semantic_direction=semantic_direction,
+            semantic_prosody_strength=semantic_prosody_strength,
+            humanization_strength=humanization_strength,
         )
 
         SYNTHESIS_HISTORY.append({
@@ -374,7 +387,12 @@ async def synthesize_delivery_endpoint(
                     "duration": meta.get("duration_sec"),
                     "phrase_count": meta.get("phrase_count"),
                     "energy_mode": meta.get("energy_mode"),
-                    "overall_pace": meta.get("overall_pace")
+                    "overall_pace": meta.get("overall_pace"),
+                    "speech_director": meta.get("speech_director"),
+                    "semantic_direction": meta.get("semantic_direction"),
+                    "semantic_prosody_strength": meta.get("semantic_prosody_strength"),
+                    "humanization_strength": meta.get("humanization_strength", 0.0),
+                    "applied_plan": meta.get("applied_plan")
                 }, ensure_ascii=True)
             }
         )
@@ -382,6 +400,11 @@ async def synthesize_delivery_endpoint(
     except Exception as e:
         print(f"Error in synthesize_delivery: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/speech_director/status")
+def speech_director_status_endpoint():
+    """Reports whether Groq semantic direction is enabled without exposing secrets."""
+    return SpeechDirector.status()
 
 # -------------------------------------------------------------
 # STANDARD NORMAL TTS SYNTHESIS WITH PRONUNCIATION PREPROCESSING
