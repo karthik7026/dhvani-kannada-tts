@@ -109,6 +109,10 @@ PROSODY_LIMITS: Dict[str, int] = {
 DEFAULT_SEMANTIC_PROSODY_STRENGTH = float(os.getenv("SEMANTIC_PROSODY_STRENGTH", "0.18"))
 DEFAULT_HUMANIZATION_STRENGTH = float(os.getenv("HUMANIZATION_STRENGTH", "0.0"))
 
+# Voice Identity Stability: Configurable adjacent prosody continuity constraints
+MAX_ADJACENT_PITCH_DELTA_HZ: int = int(os.getenv("MAX_ADJACENT_PITCH_DELTA_HZ", "14"))
+MAX_ADJACENT_RATE_DELTA_PCT: int = int(os.getenv("MAX_ADJACENT_RATE_DELTA_PCT", "10"))
+
 # Connector delimiters for natural breathing boundaries
 CONNECTOR_DELIMS = re.compile(r'([,;:—–]+|\s+ಮತ್ತು\s+|\s+ಹಾಗೆಯೇ\s+|\s+ಆದರೆ\s+|\s+ಇದರಿಂದ\s+|\s+ಅಲ್ಲದೆ\s+|\s+ಆದ್ದರಿಂದ\s+|\s+ಈಗ\s+|\s+ನೋಡಿ\s+)', re.UNICODE)
 
@@ -150,10 +154,11 @@ def _bounded(value: int, lower: str, upper: str) -> int:
 def _parse_edge_value(value: str) -> int:
     return int(value.replace("Hz", "").replace("%", "").replace("+", ""))
 
-def trim_silence_pcm(samples: np.ndarray, sr: int = 24000, thresh_db: float = -38.0, pad_ms: int = 8) -> np.ndarray:
+def trim_silence_pcm(samples: np.ndarray, sr: int = 24000, thresh_db: float = -42.0, pad_ms: int = 24) -> np.ndarray:
     """
     Trims leading and trailing silence from Edge-TTS generated audio chunk,
-    leaving a clean 8ms safety margin for natural phonetic onset and decay.
+    leaving a conservative 24ms safety margin to preserve natural phonetic onset
+    and consonant decay tails.
     """
     if len(samples) == 0:
         return samples
@@ -527,6 +532,65 @@ class KannadaProsodyMapper:
         return [{"text": text, "delivery": directed, "kind": "full_phrase"}]
 
     @classmethod
+    def apply_continuity_smoothing(
+        cls,
+        deliveries: List[Dict[str, Any]],
+        max_pitch_delta: int = MAX_ADJACENT_PITCH_DELTA_HZ,
+        max_rate_delta: int = MAX_ADJACENT_RATE_DELTA_PCT,
+    ) -> List[Dict[str, Any]]:
+        """
+        Applies continuity-aware sequential smoothing across adjacent phrases.
+        Prevents abrupt neural vocoder timbre/pitch cliffs while strictly preserving
+        the communicative direction and relative dynamics.
+        """
+        if not deliveries:
+            return deliveries
+
+        smoothed = []
+        prev_rate_val = None
+        prev_pitch_val = None
+
+        for idx, d in enumerate(deliveries):
+            d_copy = dict(d)
+            raw_rate = _parse_edge_value(d["rate"])
+            raw_pitch = _parse_edge_value(d["pitch"])
+
+            d_copy["raw_rate"] = d["rate"]
+            d_copy["raw_pitch"] = d["pitch"]
+
+            if idx == 0 or prev_rate_val is None:
+                sm_rate = raw_rate
+                sm_pitch = raw_pitch
+            else:
+                # Rate continuity constraint
+                rate_diff = raw_rate - prev_rate_val
+                if abs(rate_diff) > max_rate_delta:
+                    sm_rate = prev_rate_val + (max_rate_delta if rate_diff > 0 else -max_rate_delta)
+                else:
+                    sm_rate = raw_rate
+
+                # Pitch continuity constraint
+                pitch_diff = raw_pitch - prev_pitch_val
+                if abs(pitch_diff) > max_pitch_delta:
+                    sm_pitch = prev_pitch_val + (max_pitch_delta if pitch_diff > 0 else -max_pitch_delta)
+                else:
+                    sm_pitch = raw_pitch
+
+            sm_rate = _bounded(sm_rate, "MIN_RATE", "MAX_RATE")
+            sm_pitch = _bounded(sm_pitch, "MIN_PITCH", "MAX_PITCH")
+
+            d_copy["rate"] = f"+{sm_rate}%" if sm_rate >= 0 else f"{sm_rate}%"
+            d_copy["pitch"] = f"+{sm_pitch}Hz" if sm_pitch >= 0 else f"{sm_pitch}Hz"
+            d_copy["smoothed_rate"] = d_copy["rate"]
+            d_copy["smoothed_pitch"] = d_copy["pitch"]
+
+            prev_rate_val = sm_rate
+            prev_pitch_val = sm_pitch
+            smoothed.append(d_copy)
+
+        return smoothed
+
+    @classmethod
     def get_realtime_prosody_plan(
         cls,
         kannada_text: str,
@@ -559,14 +623,13 @@ class KannadaProsodyMapper:
         # this with Groq's equivalent semantic classification when configured.
         direction_plan = SpeechDirector.local_plan(phrases)
 
-        plan = []
-        total_estimated_ms = 0
-
+        # 1. Compute raw phrase deliveries
+        raw_deliveries = []
+        valid_phrases = []
         for idx, p_info in enumerate(phrases):
             phrase_text = p_info["text"]
             if not phrase_text:
                 continue
-
             delivery = cls.get_phrase_delivery(
                 p_info, prosody_profile, actual_voice, idx, len(phrases),
                 energy_mode, pitch_depth, pacing_multiplier, pause_style,
@@ -575,7 +638,17 @@ class KannadaProsodyMapper:
                 humanization_strength=humanization_strength,
                 has_previous_phrase=idx > 0,
             )
+            raw_deliveries.append(delivery)
+            valid_phrases.append(p_info)
 
+        # 2. Apply continuity-aware sequential smoothing
+        smoothed_deliveries = cls.apply_continuity_smoothing(raw_deliveries)
+
+        plan = []
+        total_estimated_ms = 0
+
+        for idx, (p_info, delivery) in enumerate(zip(valid_phrases, smoothed_deliveries)):
+            phrase_text = p_info["text"]
             akshara_count = count_aksharas(phrase_text)
             speed_val = (100 + _parse_edge_value(delivery["rate"])) / 100.0
             speech_ms = int((akshara_count / max(3.5, 7.5 * speed_val)) * 1000)
@@ -601,6 +674,10 @@ class KannadaProsodyMapper:
             "semantic_prosody_strength": max(0.0, min(1.0, float(semantic_prosody_strength))) if semantic_direction else 0.0,
             "humanization_strength": max(0.0, min(1.0, float(humanization_strength))),
             "prosody_limits": PROSODY_LIMITS,
+            "continuity_constraints": {
+                "max_adjacent_pitch_delta_hz": MAX_ADJACENT_PITCH_DELTA_HZ,
+                "max_adjacent_rate_delta_pct": MAX_ADJACENT_RATE_DELTA_PCT,
+            },
             "total_phrases": len(plan),
             "transformations_applied": len(transforms),
             "estimated_total_sec": round(total_estimated_ms / 1000.0, 2),
@@ -655,25 +732,35 @@ class KannadaProsodyMapper:
         # Direction is optional; the local plan is always available as a safe fallback.
         direction_plan = await SpeechDirector.direct(phrases) if semantic_direction else SpeechDirector.local_plan(phrases)
 
+        # Compute raw deliveries
+        raw_deliveries = []
+        valid_phrases = []
+        for idx, p_info in enumerate(phrases):
+            phrase_text = p_info["text"]
+            if not phrase_text:
+                continue
+            delivery = cls.get_phrase_delivery(
+                p_info, prosody_profile, actual_voice, idx, len(phrases),
+                energy_mode, pitch_depth, pacing_multiplier, pause_style,
+                direction_plan[idx], semantic_direction,
+                semantic_prosody_strength=semantic_prosody_strength,
+                humanization_strength=humanization_strength,
+                has_previous_phrase=idx > 0,
+            )
+            raw_deliveries.append(delivery)
+            valid_phrases.append(p_info)
+
+        # Apply continuity-aware sequential smoothing
+        smoothed_deliveries = cls.apply_continuity_smoothing(raw_deliveries)
+
         temp_dir = tempfile.mkdtemp(prefix="dhvani_delivery_")
         pcm_chunks = []
         applied_plan = []
         sr = 24000
 
         try:
-            for idx, p_info in enumerate(phrases):
+            for idx, (p_info, delivery) in enumerate(zip(valid_phrases, smoothed_deliveries)):
                 phrase_text = p_info["text"]
-                if not phrase_text:
-                    continue
-
-                delivery = cls.get_phrase_delivery(
-                    p_info, prosody_profile, actual_voice, idx, len(phrases),
-                    energy_mode, pitch_depth, pacing_multiplier, pause_style,
-                    direction_plan[idx], semantic_direction,
-                    semantic_prosody_strength=semantic_prosody_strength,
-                    humanization_strength=humanization_strength,
-                    has_previous_phrase=idx > 0,
-                )
 
                 if delivery["pause_before_ms"]:
                     pcm_chunks.append(np.zeros(int((delivery["pause_before_ms"] / 1000.0) * sr), dtype=np.float32))
@@ -695,12 +782,12 @@ class KannadaProsodyMapper:
                     with wave.open(wav_path, "rb") as wf:
                         raw = wf.readframes(wf.getnframes())
                         data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-                    pcm_chunks.append(trim_silence_pcm(data, sr=sr, thresh_db=-38.0, pad_ms=8))
+                    pcm_chunks.append(trim_silence_pcm(data, sr=sr, thresh_db=-42.0, pad_ms=24))
                     if segment_index < len(local_segments) - 1:
                         pcm_chunks.append(np.zeros(int(0.11 * sr), dtype=np.float32))
 
                 # Meaningful phrase pause insertion; timing follows semantic intent.
-                if idx < len(phrases) - 1:
+                if idx < len(valid_phrases) - 1:
                     pause_samples = int((delivery["pause_after_ms"] / 1000.0) * sr)
                     silence = np.zeros(pause_samples, dtype=np.float32)
                     pcm_chunks.append(silence)

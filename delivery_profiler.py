@@ -154,10 +154,34 @@ class DeliveryProfiler:
             idx95 = int(0.95 * len(sorted_rms))
             p15 = sorted_rms[idx15]
             p95 = sorted_rms[idx95]
-            vad_thresh = p15 + 0.35 * max(1e-5, (p95 - p15))
-            is_speech = [r > vad_thresh for r in rms_frames]
+            vad_thresh = p15 + 0.30 * max(1e-5, (p95 - p15))
+            raw_speech = [r > vad_thresh for r in rms_frames]
 
-            # Identify Pauses (silence runs >= 100 ms / 10 frames)
+            # Morphological Silence Bridging & Hangover:
+            # Step A: Bridge short speech dropouts (<= 50ms / 5 frames) inside active speech
+            bridged_speech = list(raw_speech)
+            gap = 0
+            for i in range(len(bridged_speech)):
+                if not bridged_speech[i]:
+                    gap += 1
+                else:
+                    if 0 < gap <= 5 and (i - gap > 0):
+                        for k in range(i - gap, i):
+                            bridged_speech[k] = True
+                    gap = 0
+
+            # Step B: Bridge short noise bursts / clicks (<= 60ms / 6 frames) inside continuous pause
+            noise = 0
+            for i in range(len(bridged_speech)):
+                if bridged_speech[i]:
+                    noise += 1
+                else:
+                    if 0 < noise <= 6 and (i - noise > 0):
+                        for k in range(i - noise, i):
+                            bridged_speech[k] = False
+                    noise = 0
+
+            # Identify Pauses (bridged silence runs >= 100 ms / 10 frames)
             min_pause_frames = 10
             pauses_ms = []
             speech_runs_frames = []
@@ -165,7 +189,7 @@ class DeliveryProfiler:
             curr_silence = 0
             curr_speech = 0
             
-            for speech_active in is_speech:
+            for speech_active in bridged_speech:
                 if speech_active:
                     if curr_silence >= min_pause_frames:
                         pauses_ms.append(curr_silence * 10)
@@ -186,12 +210,16 @@ class DeliveryProfiler:
             pause_count = len(pauses_ms)
             if pauses_ms:
                 s_pauses = sorted(pauses_ms)
-                pause_median_ms = float(s_pauses[len(s_pauses) // 2])
-                pause_p10_ms = float(s_pauses[int(0.10 * len(s_pauses))])
-                pause_p90_ms = float(s_pauses[min(len(s_pauses) - 1, int(0.90 * len(s_pauses)))])
+                n_p = len(s_pauses)
+                if n_p % 2 == 1:
+                    pause_median_ms = float(s_pauses[n_p // 2])
+                else:
+                    pause_median_ms = float(s_pauses[n_p // 2 - 1] + s_pauses[n_p // 2]) / 2.0
+                pause_p10_ms = float(s_pauses[int(0.10 * n_p)])
+                pause_p90_ms = float(s_pauses[min(n_p - 1, int(0.90 * n_p))])
                 total_pause_time_sec = sum(pauses_ms) / 1000.0
             else:
-                pause_median_ms = 169.0
+                pause_median_ms = 180.0
                 pause_p10_ms = 110.0
                 pause_p90_ms = 450.0
                 total_pause_time_sec = 0.0
@@ -220,24 +248,33 @@ class DeliveryProfiler:
             # -------------------------------------------------------------
             # 2. Syllable Nuclei Counting & Speaking Rate
             # -------------------------------------------------------------
-            # Energy envelope smoothing
-            sub_step = int(sr * 0.015) # 15ms
-            env = []
-            for i in range(0, len(samples) - sub_step, sub_step):
-                chunk = samples[i:i + sub_step]
-                env.append(sum(abs(x) for x in chunk) / len(chunk))
+            # 10ms energy envelope
+            sub_step = int(sr * 0.010) # 10ms
+            raw_env = np.array([np.mean(np.abs(samples[i:i + sub_step])) for i in range(0, len(samples) - sub_step, sub_step)], dtype=np.float32)
             
-            # Count prominent syllable peaks
-            min_dist = 7 # ~105ms apart
+            # Smooth energy envelope with 50ms Hann window to eliminate high-frequency ripple
+            kernel = np.hanning(7)
+            kernel = kernel / np.sum(kernel)
+            smooth_env = np.convolve(raw_env, kernel, mode='same') if len(raw_env) >= 7 else raw_env
+
+            # Count prominent syllable peaks with minimum 120ms separation (~8.3 syl/sec theoretical physical max)
+            min_dist_frames = 12 # 120ms separation between syllable nuclei
             peaks = 0
-            for i in range(1, len(env) - 1):
-                if env[i] > env[i-1] and env[i] > env[i+1] and env[i] > (p15 * 1.5):
-                    peaks += 1
+            last_peak_idx = -min_dist_frames
+            peak_thresh = p15 + 0.18 * max(1e-5, (p95 - p15))
+
+            for i in range(1, len(smooth_env) - 1):
+                if smooth_env[i] > smooth_env[i - 1] and smooth_env[i] > smooth_env[i + 1]:
+                    if smooth_env[i] > peak_thresh and (i - last_peak_idx) >= min_dist_frames:
+                        peaks += 1
+                        last_peak_idx = i
             
             active_speech_sec = max(0.5, duration_sec - total_pause_time_sec)
-            pace_syl_sec = float(min(8.5, max(3.5, peaks / active_speech_sec)))
-            pace_multiplier = float(min(1.45, max(0.75, pace_syl_sec / 5.0)))
-            target_phrase_aksharas = int(min(18, max(8, p90_breath_sec * pace_syl_sec)))
+            # Broad sensible sanity bounds (2.5 - 12.0 syl/sec) without artificial 8.5 clamp
+            raw_pace = peaks / active_speech_sec
+            pace_syl_sec = float(min(12.0, max(2.5, raw_pace)))
+            pace_multiplier = float(min(1.50, max(0.70, pace_syl_sec / 4.8)))
+            target_phrase_aksharas = int(min(18, max(8, round(p90_breath_sec * pace_syl_sec))))
 
             # -------------------------------------------------------------
             # 3. Pitch Tracking (F0 Contour, Median, Range & Slope)
