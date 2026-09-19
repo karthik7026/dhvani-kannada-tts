@@ -46,33 +46,33 @@ BUILTIN_EXPRESSIVE_PROFILE: Dict[str, Any] = {
         "ending_slope": "punchy_falling"
     },
     "speaking_rate": {
-        "pace_syl_sec": 8.5,
-        "pace_multiplier": 1.45,
-        "burst_rate_syl_sec": 8.5,
-        "speech_activity_ratio_pct": 73.4,
-        "tempo_category": "High-Energy Presenter"
+        "pace_syl_sec": 5.6,
+        "pace_multiplier": 1.04,
+        "burst_rate_syl_sec": 6.2,
+        "speech_activity_ratio_pct": 82.0,
+        "tempo_category": "Natural Human Creator"
     },
     "pauses": {
-        "detected_pauses_count": 34,
-        "raw_median_ms": 140.0,
-        "raw_p90_sec": 0.524,
-        "short_breath_ms": 180,
-        "anticipation_ms": 300,
-        "sentence_boundary_ms": 500,
-        "dramatic_emphasis_ms": 650,
+        "detected_pauses_count": 8,
+        "raw_median_ms": 75.0,
+        "raw_p90_sec": 0.250,
+        "short_breath_ms": 75,
+        "anticipation_ms": 80,
+        "sentence_boundary_ms": 250,
+        "dramatic_emphasis_ms": 120,
         "video_cut_filter_active": True
     },
     "energy_and_punch": {
-        "mean_rms_db": -26.2,
-        "energy_dynamic_range_db": 27.1,
-        "crest_factor_db": 17.5,
-        "energy_punch": 1.45,
-        "transition_contrast": "High Dynamic Range"
+        "mean_rms_db": -24.0,
+        "energy_dynamic_range_db": 18.0,
+        "crest_factor_db": 14.0,
+        "energy_punch": 1.35,
+        "transition_contrast": "Human Conversational"
     },
     "phrasing": {
-        "target_phrase_aksharas": 12,
-        "median_breath_sec": 0.18,
-        "p90_breath_sec": 0.50
+        "target_phrase_aksharas": 32,
+        "median_breath_sec": 0.08,
+        "p90_breath_sec": 0.25
     }
 }
 
@@ -100,7 +100,7 @@ PROSODY_LIMITS: Dict[str, int] = {
     "MAX_PITCH": 42,
     "MIN_VOLUME": -8,
     "MAX_VOLUME": 10,
-    "MIN_PAUSE": 80,
+    "MIN_PAUSE": 60,
     "MAX_PAUSE": 550,
 }
 
@@ -113,8 +113,8 @@ DEFAULT_HUMANIZATION_STRENGTH = float(os.getenv("HUMANIZATION_STRENGTH", "0.0"))
 MAX_ADJACENT_PITCH_DELTA_HZ: int = int(os.getenv("MAX_ADJACENT_PITCH_DELTA_HZ", "14"))
 MAX_ADJACENT_RATE_DELTA_PCT: int = int(os.getenv("MAX_ADJACENT_RATE_DELTA_PCT", "10"))
 
-# Connector delimiters for natural breathing boundaries
-CONNECTOR_DELIMS = re.compile(r'([,;:—–]+|\s+ಮತ್ತು\s+|\s+ಹಾಗೆಯೇ\s+|\s+ಆದರೆ\s+|\s+ಇದರಿಂದ\s+|\s+ಅಲ್ಲದೆ\s+|\s+ಆದ್ದರಿಂದ\s+|\s+ಈಗ\s+|\s+ನೋಡಿ\s+)', re.UNICODE)
+# Connector delimiters for natural breathing boundaries (excludes 'ಮತ್ತು' to preserve compound phrases)
+CONNECTOR_DELIMS = re.compile(r'([,;:—–]+|\s+ಆದರೆ\s+|\s+ಆದ್ದರಿಂದ\s+|\s+ಆದಾಗ್ಯೂ\s+)', re.UNICODE)
 
 def count_aksharas(text: str) -> int:
     """Calculates Kannada syllable count based on akshara phonology."""
@@ -325,32 +325,32 @@ class KannadaProsodyMapper:
 
         # Energy Mode Profiles
         energy_offsets = {
-            "calm": {"rate_delta": -14, "pitch_scale": 0.65, "pause_mult": 1.25, "tag": "Calm Narrator"},
-            "balanced": {"rate_delta": 0, "pitch_scale": 0.85, "pause_mult": 1.10, "tag": "Balanced Explainer"},
-            "high_energy": {"rate_delta": 6, "pitch_scale": 1.0, "pause_mult": 1.0, "tag": "High-Energy Presenter"},
-            "dramatic": {"rate_delta": 10, "pitch_scale": 1.35, "pause_mult": 1.35, "tag": "Dramatic Climax"}
+            "calm": {"rate_delta": -2, "pitch_scale": 0.65, "pause_mult": 1.15, "tag": "Calm Narrator"},
+            "balanced": {"rate_delta": 0, "pitch_scale": 0.85, "pause_mult": 1.0, "tag": "Balanced Explainer"},
+            "high_energy": {"rate_delta": 2, "pitch_scale": 1.0, "pause_mult": 1.0, "tag": "Natural Human Creator"},
+            "dramatic": {"rate_delta": 4, "pitch_scale": 1.25, "pause_mult": 1.2, "tag": "Dramatic Climax"}
         }
         cfg = energy_offsets.get(energy_mode, energy_offsets["high_energy"])
 
-        # Base presenter rate: ~+28% to +44%
-        base_rate = int(max(18.0, min(42.0, (base_pace_mult - 1.0) * 80.0 + cfg["rate_delta"])))
+        # Base presenter rate: ~0% to +5% (conversational, not +44%)
+        base_rate = int(max(-2.0, min(8.0, (base_pace_mult - 1.0) * 25.0 + cfg["rate_delta"])))
 
-        # Pause style baselines
+        # Pause style baselines (human breath gaps, not 500ms dead air)
         if pause_style == "snappy":
-            base_setup_pause = 190
-            base_anticipation_pause = 270
-            base_focus_pause = 320
-            base_sentence_pause = 500
+            base_setup_pause = 70
+            base_anticipation_pause = 75
+            base_focus_pause = 80
+            base_sentence_pause = 240
         elif pause_style == "dramatic":
-            base_setup_pause = 240
-            base_anticipation_pause = 340
-            base_focus_pause = 400
-            base_sentence_pause = 620
+            base_setup_pause = 90
+            base_anticipation_pause = 100
+            base_focus_pause = 110
+            base_sentence_pause = 300
         else: # balanced
-            base_setup_pause = 210
-            base_anticipation_pause = 290
-            base_focus_pause = 350
-            base_sentence_pause = 540
+            base_setup_pause = 75
+            base_anticipation_pause = 80
+            base_focus_pause = 85
+            base_sentence_pause = 250
 
         is_male = ("gagan" in base_voice.lower() or "male" in base_voice.lower())
         p_scale = pitch_depth * cfg["pitch_scale"]
@@ -361,46 +361,46 @@ class KannadaProsodyMapper:
         has_focus = phrase.get("has_focus", False)
 
         # -------------------------------------------------------------
-        # 4-PHASE DYNAMIC PROSODIC CYCLE
+        # 4-PHASE DYNAMIC PROSODIC CYCLE (Conversational Human Range)
         # -------------------------------------------------------------
         if is_question:
-            # 1. Rhetorical Question Peak (+38Hz to +46Hz)
-            pitch_hz = int(round((38 if is_male else 46) * p_scale))
-            applied_rate = min(44, base_rate + 6)
+            # 1. Rhetorical Question Peak (+7Hz to +9Hz)
+            pitch_hz = int(round((7 if is_male else 9) * p_scale))
+            applied_rate = min(8, base_rate + 2)
             pause_ms = int(base_sentence_pause * cfg["pause_mult"])
             tag = "❓ Rhetorical Question Peak"
 
         elif is_exclamation:
-            # 2. Exclamatory Punch (+32Hz to +38Hz)
-            pitch_hz = int(round((32 if is_male else 38) * p_scale))
-            applied_rate = min(42, base_rate + 4)
+            # 2. Exclamatory Punch (+5Hz to +7Hz)
+            pitch_hz = int(round((5 if is_male else 7) * p_scale))
+            applied_rate = min(8, base_rate + 2)
             pause_ms = int(base_sentence_pause * 0.9 * cfg["pause_mult"])
             tag = "📢 Exclamatory Punch"
 
         elif has_focus and not is_sentence_end:
-            # 3. Focus Entity Gravitas & Emphasis (+38Hz to +44Hz peak with deliberate tempo deceleration)
-            pitch_hz = int(round((38 if is_male else 44) * p_scale))
-            applied_rate = max(6, base_rate - 20) # Decelerate so numbers/entities hit with acoustic gravity
+            # 3. Focus Entity Gravitas & Emphasis (+3Hz to +5Hz with gentle deceleration)
+            pitch_hz = int(round((4 if is_male else 5) * p_scale))
+            applied_rate = max(-3, base_rate - 2)
             pause_ms = int(base_focus_pause * cfg["pause_mult"])
             tag = "🎯 Focus Entity Gravitas"
 
         elif is_sentence_end:
-            # 4. Punchy Falling Statement Cadence (-28Hz to -34Hz deep grounding)
-            pitch_hz = int(round((-30 if is_male else -34) * p_scale))
-            applied_rate = max(12, base_rate - 12)
+            # 4. Grounded Statement Landing (-3Hz to -4Hz natural cadence fall)
+            pitch_hz = int(round((-3 if is_male else -4) * p_scale))
+            applied_rate = max(-3, base_rate - 2)
             pause_ms = int(base_sentence_pause * cfg["pause_mult"])
             tag = "💥 Authoritative Cadence Fall"
 
         elif phrase_index == 0 or phrase_index % 3 == 0:
-            # 5. Fast Setup Burst (+12Hz to +16Hz)
-            pitch_hz = int(round((14 if is_male else 18) * p_scale))
-            applied_rate = min(44, base_rate + 6)
+            # 5. Setup Clause (+3Hz to +4Hz)
+            pitch_hz = int(round((3 if is_male else 4) * p_scale))
+            applied_rate = min(8, base_rate + 2)
             pause_ms = int(base_setup_pause * cfg["pause_mult"])
-            tag = "⚡ Fast Setup Burst"
+            tag = "⚡ Setup Clause"
 
         else:
-            # 6. Anticipation Climb (+24Hz to +30Hz)
-            pitch_hz = int(round((26 if is_male else 30) * p_scale))
+            # 6. Anticipation Build (+2Hz to +3Hz)
+            pitch_hz = int(round((2 if is_male else 3) * p_scale))
             applied_rate = base_rate
             pause_ms = int(base_anticipation_pause * cfg["pause_mult"])
             tag = "📈 Anticipation Build-Up"
@@ -447,13 +447,13 @@ class KannadaProsodyMapper:
         # A semantic label is only a small hint. It never forces a contour,
         # creates a new boundary, or changes an entire sentence into a new style.
         deltas = {
-            "hook": (8, 10, 4, 35),
-            "explanation": (-4, -4, 1, 15),
-            "emphasize": (-7, 8, 5, 55),
-            "question": (-3, 7, 2, 60),
-            "conclusion": (-5, -7, 1, 80),
-            "contrast": (-6, 6, 3, 70),
-            "continuation": (2, -2, 0, -20),
+            "hook": (3, 3, 1, 10),
+            "explanation": (0, 0, 0, 5),
+            "emphasize": (-2, 3, 1, 15),
+            "question": (1, 4, 1, 20),
+            "conclusion": (-2, -3, 0, 25),
+            "contrast": (-1, 3, 1, 20),
+            "continuation": (2, 1, 0, -10),
             "baseline": (0, 0, 0, 0),
         }
         rate_delta, pitch_delta, volume_delta, pause_delta = deltas.get(intent, (0, 0, 0, 0))
@@ -470,38 +470,38 @@ class KannadaProsodyMapper:
             # - Focal thoughts and numbers are slightly more deliberate
             # - Simple connecting clauses flow slightly quicker
             if phrase.get("has_focus") or intent in ("emphasize", "contrast"):
-                rate_value -= round(10 * h_strength)
+                rate_value -= round(3 * h_strength)
             elif intent == "continuation" or not phrase.get("is_sentence_end"):
-                rate_value += round(8 * h_strength)
+                rate_value += round(2 * h_strength)
             elif intent == "hook":
-                rate_value += round(5 * h_strength)
+                rate_value += round(2 * h_strength)
 
             # 2. Contextual Phrase Ending Variation:
             if phrase.get("is_sentence_end"):
                 is_last_phrase = (phrase_index == total_phrases - 1)
                 if phrase.get("is_question") or intent == "question":
-                    # Question ending: anticipatory rising inflection
-                    pitch_value += round(16 * h_strength)
-                    pause_after += round(35 * h_strength)
+                    # Question ending: gentle anticipatory inflection
+                    pitch_value += round(3 * h_strength)
+                    pause_after += round(20 * h_strength)
                 elif is_last_phrase or intent == "conclusion":
                     # Paragraph conclusion: authoritative grounding
-                    pitch_value -= round(6 * h_strength)
-                    pause_after += round(50 * h_strength)
+                    pitch_value -= round(2 * h_strength)
+                    pause_after += round(30 * h_strength)
                 elif intent == "contrast":
                     # Contrast ending: attentive transition
-                    pitch_value += round(8 * h_strength)
-                    pause_after += round(30 * h_strength)
+                    pitch_value += round(2 * h_strength)
+                    pause_after += round(20 * h_strength)
                 else:
-                    # Intermediate sentence continuation: gentle decay into next sentence
-                    pitch_value += round(10 * h_strength)
-                    pause_after = max(280, pause_after - round(70 * h_strength))
+                    # Intermediate sentence continuation
+                    pitch_value += round(1 * h_strength)
+                    pause_after = max(200, min(280, pause_after))
             else:
-                # Mid-sentence breath group: smooth natural continuation
-                pause_after = max(140, min(pause_after, int(220 - 30 * h_strength)))
+                # Mid-sentence breath group: quick 65-90ms natural human breath
+                pause_after = max(60, min(95, pause_after))
 
             # 3. Contrast Pre-Pause
             if intent == "contrast" and has_previous_phrase:
-                pause_before = round(45 * h_strength)
+                pause_before = round(20 * h_strength)
 
         rate_value = _bounded(rate_value, "MIN_RATE", "MAX_RATE")
         pitch_value = _bounded(pitch_value, "MIN_PITCH", "MAX_PITCH")
