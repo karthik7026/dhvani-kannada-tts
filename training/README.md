@@ -75,20 +75,10 @@ Only train a voice with the speaker's permission. Before sharing this project,
 verify that `training/data/`, model checkpoints, and original recordings are
 not staged for commit.
 
-## Free Kaggle GPU fallback
+## Google Colab GPU training
 
-`kaggle_free_gpu.ipynb` is a restartable free-GPU path. Create a **private**
-Kaggle dataset containing the reviewed `metadata.csv` and `wavs/` directory,
-then attach it to the notebook as `dhvani-private-voice-data`. Kaggle's free
-GPUs have variable availability and limited VRAM, so this path may stop or run
-out of memory; it is suitable for an initial experiment, not a guaranteed
-training service. Never make the voice dataset or checkpoints public.
-
-## Google Colab fallback
-
-`colab_f5_tts.ipynb` is the equivalent setup for a free Google Colab GPU. In
+`colab_f5_tts.ipynb` is the setup for Google Colab GPU training. In
 Colab, choose **Runtime > Change runtime type > T4 GPU**, then mount a private
 Google Drive folder at `MyDrive/dhvani-training/data/`. It must contain the
-reviewed `metadata.csv` and `wavs/` directory. Free Colab GPU availability and
-session length vary, so save any checkpoint to private Drive before the
+reviewed `metadata.csv` and `wavs/` directory. Save any checkpoints to private Drive before the
 runtime ends.
